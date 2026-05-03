@@ -1,0 +1,67 @@
+[workspace]
+channels = ["conda-forge"]
+platforms = ["linux-64", "linux-aarch64", "osx-64", "osx-arm64", "win-64"]
+preview = ["pixi-build"]
+requires-pixi = ">=0.63.0"
+
+[package.build.backend]
+name = "pixi-build-python"
+version = ">=0.4.6,<0.5.0"
+channels = ["conda-forge"]
+
+[package.build.config]
+ignore-pypi-mapping = true
+
+[package.host-dependencies]
+uv = ">=0.10.2,<0.12.0"
+
+[package.run-dependencies]
+fastapi-core = ">=0.119.1,<2.0.0"
+hypothesis-jsonschema = ">=0.23.1,<2.0.0"
+lumen = ">=0.6.1,<2.0.0"
+packaging = ">=26.0.0"
+panel = ">=1.8.3,<2.0.0"
+platformdirs = ">=4.6.0,<5.0.0"
+pydantic = ">=2.12.1,<4.0.0"
+pydantic-settings = ">=2.13.0,<4.0.0"
+rich = ">=14.2.0"
+rich-argparse = ">=1.7.2,<2.0.0"
+typing-extensions = ">=4.15.0,<5.0.0"
+
+# https://github.com/prefix-dev/pixi/issues/3275
+[system-requirements]
+# macos = "10.15"
+
+[target]
+linux-64 = { dependencies = { libblas = { build = "*_mkl" } } }
+linux-aarch64 = { dependencies = { libblas = { build = "*_openblas" } } }
+# https://conda-forge.org/news/2025/07/31/new-accelerate-macos/
+osx-64 = { dependencies = { libblas = { build = "*accelerate" } } }
+osx-arm64 = { dependencies = { libblas = { build = "*accelerate" } } }
+win-64 = { dependencies = { libblas = { build = "*_mkl" } } }
+
+[dependencies]
+attrs = ">=25.4.0"
+basedpyright = ">=1.39.3"
+gandharva = { path = "." }
+httpx = ">=0.28.1"
+pandas-stubs = ">=1.4.2,<4.0.0"
+pytest = ">=9.0.3"
+
+[environments]
+default = ["py310"]
+py314 = ["py314"]
+
+[feature.py310.dependencies]
+python-gil = "3.10.*"
+ruff = ">=0.15.1"
+
+[feature.py314.dependencies]
+python-gil = "3.14.*"
+
+[tasks]
+pytest = "pytest"
+test = [
+    { task = "pytest", environment = "default" },
+    { task = "pytest", environment = "py314" },
+]

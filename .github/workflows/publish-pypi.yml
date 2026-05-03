@@ -1,0 +1,26 @@
+name: PyPI
+
+on:
+  push:
+    tags:
+      - v*
+
+permissions: read-all
+
+jobs:
+  pypi:
+    name: Publish to PyPI
+    permissions:
+      id-token: write
+    runs-on: ubuntu-slim
+    environment:
+      name: pypi
+      url: https://pypi.org/project/gandharva
+    steps:
+      - uses: actions/checkout@v6
+      - uses: astral-sh/setup-uv@v8.1.0
+        with:
+          enable-cache: false
+      - run: uv build
+      - uses: astral-sh/attest-action@v0.0.6
+      - run: uv publish --trusted-publishing always
