@@ -46,7 +46,7 @@ _T = TypeVar("_T", default=Never)
 _Widget = str | pn.widgets.Widget | Callable[..., pn.widgets.Widget]
 
 
-class _Layoutable(TypedDict, Generic[_T], extra_items=Any, total=False):
+class _Layoutable(TypedDict, extra_items=Any, total=False):
     align: _LayoutableAlign | tuple[_LayoutableAlign, _LayoutableAlign]
     aspect_ratio: float | Literal["auto"] | None
     css_classes: Never
@@ -58,7 +58,7 @@ class _Layoutable(TypedDict, Generic[_T], extra_items=Any, total=False):
     max_width: int | None
     min_height: int | None
     min_width: int | None
-    name: _T
+    name: Never
     sizing_mode: Literal[
         "fixed",
         "stretch_width",
@@ -81,7 +81,7 @@ class _PaneBase(_Layoutable, Generic[_T], total=False):
     object: Never
 
 
-class _Viewable(_Layoutable[_T], total=False):
+class _Viewable(_Layoutable, total=False):
     loading: Never
 
 
@@ -126,17 +126,18 @@ class BasicTemplateParameters(TypedDict, extra_items=Any, total=False):
     _actions: Never
 
 
-class ButtonParameters(_Viewable[str], total=False):
-    button_style: Literal["solid", "outline"]
-    button_type: Literal[
-        "default", "primary", "success", "info", "light", "danger"]
+class ButtonParameters(_Viewable, total=False):
+    button_style: Never
+    button_type: Never
     clicks: Never
+    color: Literal["default", "primary", "success", "info", "light", "danger"]
     description: "str | Tooltip | pn.widgets.TooltipIcon | None"
     description_delay: int
     disabled: Never
     icon: str | None
     icon_size: str
     value: Never
+    variant: Literal["solid", "outline"]
 
 
 class DataFrameParameters(_HTMLBasePane, total=False):

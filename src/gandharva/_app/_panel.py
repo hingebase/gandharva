@@ -23,7 +23,7 @@ from typing import TYPE_CHECKING, cast
 
 import lumen.schema  # pyright: ignore[reportMissingTypeStubs]
 import panel as pn
-import param  # pyright: ignore[reportMissingTypeStubs]
+import param
 import pydantic
 from hypothesis_jsonschema import _resolve  # noqa: PLC2701
 from typing_extensions import Any, final, override
@@ -47,7 +47,7 @@ class App(_pydantic.App):
 
     @classmethod
     def panel_button_params(cls) -> gd.typing.ButtonParameters:
-        return {"name": "Submit", "button_type": "primary"}
+        return {"color": "primary", "label": "Submit"}
 
     @classmethod
     def panel_dataframe_params(cls) -> gd.typing.DataFrameParameters:
@@ -105,11 +105,8 @@ class App(_pydantic.App):
             ),
         )
         template = cls._panel_template(sidebar)
-        indicator = cast(
-            "pn.widgets.indicators.BooleanIndicator | None",
-            template.busy_indicator,
-        )
-        cast("ListLike", template.main).append(pn.bind(main, submit))  # pyright: ignore[reportUnknownMemberType]
+        indicator = template.busy_indicator
+        cast("ListLike", template.main).append(pn.bind(main, submit))
         return template
 
     @classmethod
@@ -151,7 +148,7 @@ class App(_pydantic.App):
                 object=cls.app_description(),
             )
             return pn.pane.Markdown(**kwargs)
-        obj: dict[str, object] = {k: v.value for k, v in widgets}  # pyright: ignore[reportUnknownMemberType]
+        obj = {k: v.value for k, v in widgets}
         try:
             data = model.model_validate(obj)
         except pydantic.ValidationError as e:
@@ -181,10 +178,10 @@ class App(_pydantic.App):
         indicator: pn.widgets.indicators.BooleanIndicator | None = None,
     ) -> tuple["Viewable", contextlib.ExitStack]:
         with contextlib.ExitStack() as stack:
-            stack.enter_context(submit.param.update(disabled=True))  # pyright: ignore[reportUnknownMemberType]
+            stack.enter_context(submit.param.update(disabled=True))
             if indicator:
                 stack.enter_context(
-                    indicator.param.update(value=True, visible=True),  # pyright: ignore[reportUnknownMemberType]
+                    indicator.param.update(value=True, visible=True),
                 )
             try:
                 result = callback()
