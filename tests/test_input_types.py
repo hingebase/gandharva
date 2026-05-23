@@ -59,8 +59,8 @@ def test_nested_types_gui() -> None:
     assert isinstance(editor2, pn.widgets.JSONEditor)
     _assert_submit_button(row)
     adapter = pydantic.TypeAdapter(dict[str, pydantic.JsonValue])
-    assert adapter.validate_python(editor1.schema)["type"] == "object"  # pyright: ignore[reportUnknownMemberType]
-    assert adapter.validate_python(editor2.schema)["type"] == "array"  # pyright: ignore[reportUnknownMemberType]
+    assert adapter.validate_python(editor1.schema)["type"] == "object"
+    assert adapter.validate_python(editor2.schema)["type"] == "array"
 
 
 class _BaseModel(pydantic.BaseModel):
@@ -97,6 +97,6 @@ def _assert_submit_button(row: pn.viewable.Viewable) -> None:
 def _sidebar(app: type[gd.Gandharva]) -> pn.Column:
     template = pn.panel(app)  # pyright: ignore[reportUnknownMemberType]
     assert isinstance(template, pn.template.MaterialTemplate)
-    sidebar = template.sidebar  # pyright: ignore[reportUnknownMemberType, reportUnknownVariableType]
+    sidebar = template.sidebar
     assert isinstance(sidebar, pn.Column)
     return sidebar
