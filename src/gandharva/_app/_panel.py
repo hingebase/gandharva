@@ -37,7 +37,7 @@ if TYPE_CHECKING:
     from panel.io.application import TViewable
     from panel.layout import ListLike
     from panel.viewable import Viewable
-    from panel.widgets import Widget
+    from panel.widgets import WidgetBase
 
 _NINF = -math.inf
 
@@ -138,7 +138,7 @@ class App(_pydantic.App):
         cls,
         loop: asyncio.AbstractEventLoop,
         model: type[pydantic.BaseModel],
-        widgets: Iterable["tuple[str, Widget]"],
+        widgets: Iterable["tuple[str, WidgetBase]"],
         *,
         clicked: bool = False,
     ) -> "Viewable":
@@ -227,7 +227,7 @@ class _Sidebar(lumen.schema.JSONSchema):
         cls,
         kwargs: gd.typing.JSONSchemaParameters,
         schema: dict[str, pydantic.JsonValue],
-    ) -> tuple["ListLike", "Iterable[tuple[str, Widget]]"]:
+    ) -> tuple["ListLike", "Iterable[tuple[str, WidgetBase]]"]:
         object_: dict[str, object] = {}
         for k, v in schema.items():
             match v:
@@ -239,14 +239,14 @@ class _Sidebar(lumen.schema.JSONSchema):
                     pass
         self = cls(**dict(kwargs, multi=False, object=object_, schema=schema))
         sidebar = cast("ListLike", self.layout)
-        widgets = cast("dict[str, Widget]", self._widgets).items()
+        widgets = cast("dict[str, WidgetBase]", self._widgets).items()
         return sidebar, widgets
 
     @override
     def _array_type(
         self,
         schema: Mapping[str, Any],
-    ) -> tuple["type[Widget]", dict[str, object]]:
+    ) -> tuple["type[WidgetBase]", dict[str, object]]:
         match schema:
             case {"items": {"enum": [*options]}}:
                 return pn.widgets.MultiSelect, {"options": options}

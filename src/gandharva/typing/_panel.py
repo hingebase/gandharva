@@ -43,7 +43,7 @@ _Formatter = Callable[[object], str]
 _LayoutableAlign = Literal["auto", "start", "center", "end"]
 _Policy = Literal["auto", "fixed", "fit", "min", "max"]
 _T = TypeVar("_T", default=Never)
-_Widget = str | pn.widgets.Widget | Callable[..., pn.widgets.Widget]
+_Widget = str | pn.widgets.WidgetBase | Callable[..., pn.widgets.WidgetBase]
 
 
 class _Layoutable(TypedDict, extra_items=Any, total=False):
