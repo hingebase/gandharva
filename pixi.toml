@@ -42,7 +42,7 @@ win-64 = { dependencies = { libblas = { build = "*_mkl" } } }
 
 [dependencies]
 attrs = ">=25.4.0"
-basedpyright = ">=1.39.6"
+basedpyright = ">=1.39.7"
 gandharva = { path = "." }
 httpx = ">=0.28.1"
 httpx2 = ">=2.2.0"
