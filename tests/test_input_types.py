@@ -18,6 +18,7 @@ from typing import Annotated
 
 import fastapi.testclient
 import panel as pn
+import panel_material_ui as pmui
 import pydantic
 import pydantic_settings
 from typing_extensions import override
@@ -89,7 +90,7 @@ class _App(gd.Gandharva):
 def _assert_submit_button(row: pn.viewable.Viewable) -> None:
     assert isinstance(row, pn.Row)
     space1, button, space2 = row
-    assert isinstance(button, pn.widgets.Button)
+    assert isinstance(button, pmui.Button)
     assert isinstance(space1, pn.Spacer)
     assert isinstance(space2, pn.Spacer)
 
