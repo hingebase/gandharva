@@ -127,17 +127,27 @@ class BasicTemplateParameters(TypedDict, extra_items=Any, total=False):
 
 
 class ButtonParameters(_Viewable, total=False):
+    attached: Never
     button_style: Never
     button_type: Never
     clicks: Never
     color: Literal["default", "primary", "success", "info", "light", "danger"]
+    dark_theme: Never
     description: "str | Tooltip | pn.widgets.TooltipIcon | None"
     description_delay: int
     disabled: Never
+    disable_elevation: bool
+    end_icon: str | None
+    href: Never
     icon: str | None
     icon_size: str
+    size: Literal["small", "medium", "large"]
+    sx: dict[str, str]
+    target: Never
+    theme_config: Never
+    use_shadow_dom: Never
     value: Never
-    variant: Literal["solid", "outline"]
+    variant: Literal["contained", "outlined", "text"]
 
 
 class DataFrameParameters(_HTMLBasePane, total=False):

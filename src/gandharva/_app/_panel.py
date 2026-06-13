@@ -23,6 +23,7 @@ from typing import TYPE_CHECKING, cast
 
 import lumen.schema  # pyright: ignore[reportMissingTypeStubs]
 import panel as pn
+import panel_material_ui as pmui
 import param
 import pydantic
 from hypothesis_jsonschema import _resolve  # noqa: PLC2701
@@ -72,7 +73,7 @@ class App(_pydantic.App):
     @classmethod
     def panel_template_params(cls) -> gd.typing.BasicTemplateParameters:
         title = _base.normalize(cls.__name__).replace("-", " ")
-        return {"title": title[:1].upper() + title[1:]}
+        return {"sidebar_width": 500, "title": title[:1].upper() + title[1:]}
 
     @classmethod
     def __panel__(cls) -> "TViewable":  # noqa: PLW3201
@@ -96,7 +97,7 @@ class App(_pydantic.App):
             _resolve.resolve_all_refs(model.model_json_schema())["properties"],  # pyright: ignore[reportArgumentType, reportUnknownMemberType]
         )
         kwargs = dict(cls.panel_button_params(), on_click=None)
-        submit = pn.widgets.Button(**kwargs)
+        submit = pmui.Button(**kwargs)
         sidebar.append(
             pn.Row(
                 pn.Spacer(sizing_mode="stretch_width"),
@@ -174,7 +175,7 @@ class App(_pydantic.App):
     def _panel_update(
         cls,
         callback: Callable[[], "Viewable"],
-        submit: pn.widgets.Button,
+        submit: pmui.Button,
         indicator: pn.widgets.indicators.BooleanIndicator | None = None,
     ) -> tuple["Viewable", contextlib.ExitStack]:
         with contextlib.ExitStack() as stack:
@@ -249,16 +250,31 @@ class _Sidebar(lumen.schema.JSONSchema):
     ) -> tuple["type[WidgetBase]", dict[str, object]]:
         match schema:
             case {"items": {"enum": [*options]}}:
-                return pn.widgets.MultiSelect, {"options": options}
+                return pmui.MultiSelect, {"options": options}
             case _:
                 return pn.widgets.JSONEditor, {"menu": False, "schema": schema}
+
+    @override
+    def _boolean_type(
+        self,
+        schema: Mapping[str, object],
+    ) -> tuple[type, dict[str, object]]:
+        # https://github.com/panel-extensions/panel-material-ui/issues/392
+        return pmui.Checkbox, {"size": "small"}
+
+    @override
+    def _enum(
+        self,
+        schema: Mapping[str, object],
+    ) -> tuple[type, dict[str, object]]:
+        return pmui.Select, {"options": schema["enum"], "size": "small"}
 
     @override
     def _integer_type(
         self,
         schema: Mapping[str, int],
-    ) -> tuple[type, dict[str, int]]:
-        kwargs = {"step": 1}
+    ) -> tuple[type, dict[str, Any]]:
+        kwargs: dict[str, int | str] = {"step": 1}
         start = max(
             schema.get("exclusiveMinimum", _NINF) + 1,
             schema.get("minimum", _NINF),
@@ -283,14 +299,15 @@ class _Sidebar(lumen.schema.JSONSchema):
                 kwargs["end"] = int(end)
             case False, False:
                 pass
-        return pn.widgets.IntInput, kwargs
+        kwargs["size"] = "small"
+        return pmui.IntInput, kwargs
 
     @override
     def _number_type(
         self,
         schema: Mapping[str, float],
-    ) -> tuple[type, dict[str, float]]:
-        kwargs = {"step": .1}
+    ) -> tuple[type, dict[str, Any]]:
+        kwargs: dict[str, float | str] = {"step": .1}
         start = schema.get("exclusiveMinimum", _NINF)
         if start > _NINF:
             start = math.nextafter(start, math.inf)
@@ -315,7 +332,8 @@ class _Sidebar(lumen.schema.JSONSchema):
                 kwargs["end"] = end
             case False, False:
                 pass
-        return pn.widgets.FloatInput, kwargs
+        kwargs["size"] = "small"
+        return pmui.FloatInput, kwargs
 
     def _object_type(
         self,
@@ -331,15 +349,18 @@ class _Sidebar(lumen.schema.JSONSchema):
     ) -> tuple[type, dict[str, object]]:
         match schema:
             case {"format": "date-time"}:
-                return pn.widgets.DatetimePicker, {"allow_input": True}
+                return pmui.DatetimePicker, {}
             case {"format": "date"}:
-                return pn.widgets.DatePicker, {}
+                return pmui.DatePicker, {}
             case {"format": "time"}:
-                return pn.widgets.TimePicker, {"clock": "24h"}
+                return pmui.TimePicker, {"clock": "24h"}
             case {"maxLength": max_length}:
-                return pn.widgets.TextInput, {"max_length": max_length}
+                return pmui.TextInput, {
+                    "max_length": max_length,
+                    "size": "small",
+                }
             case _:
-                return pn.widgets.TextInput, {}
+                return pmui.TextInput, {"size": "small"}
 
     @override
     def _widget_type(
