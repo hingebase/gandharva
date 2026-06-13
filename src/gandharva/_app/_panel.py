@@ -259,21 +259,22 @@ class _Sidebar(lumen.schema.JSONSchema):
         self,
         schema: Mapping[str, object],
     ) -> tuple[type, dict[str, object]]:
-        return pmui.Checkbox, {}
+        # https://github.com/panel-extensions/panel-material-ui/issues/392
+        return pmui.Checkbox, {"size": "small"}
 
     @override
     def _enum(
         self,
         schema: Mapping[str, object],
     ) -> tuple[type, dict[str, object]]:
-        return pmui.Select, {"options": schema["enum"]}
+        return pmui.Select, {"options": schema["enum"], "size": "small"}
 
     @override
     def _integer_type(
         self,
         schema: Mapping[str, int],
-    ) -> tuple[type, dict[str, int]]:
-        kwargs = {"step": 1}
+    ) -> tuple[type, dict[str, Any]]:
+        kwargs: dict[str, int | str] = {"step": 1}
         start = max(
             schema.get("exclusiveMinimum", _NINF) + 1,
             schema.get("minimum", _NINF),
@@ -298,14 +299,15 @@ class _Sidebar(lumen.schema.JSONSchema):
                 kwargs["end"] = int(end)
             case False, False:
                 pass
+        kwargs["size"] = "small"
         return pmui.IntInput, kwargs
 
     @override
     def _number_type(
         self,
         schema: Mapping[str, float],
-    ) -> tuple[type, dict[str, float]]:
-        kwargs = {"step": .1}
+    ) -> tuple[type, dict[str, Any]]:
+        kwargs: dict[str, float | str] = {"step": .1}
         start = schema.get("exclusiveMinimum", _NINF)
         if start > _NINF:
             start = math.nextafter(start, math.inf)
@@ -330,6 +332,7 @@ class _Sidebar(lumen.schema.JSONSchema):
                 kwargs["end"] = end
             case False, False:
                 pass
+        kwargs["size"] = "small"
         return pmui.FloatInput, kwargs
 
     def _object_type(
@@ -352,9 +355,12 @@ class _Sidebar(lumen.schema.JSONSchema):
             case {"format": "time"}:
                 return pmui.TimePicker, {"clock": "24h"}
             case {"maxLength": max_length}:
-                return pmui.TextInput, {"max_length": max_length}
+                return pmui.TextInput, {
+                    "max_length": max_length,
+                    "size": "small",
+                }
             case _:
-                return pmui.TextInput, {}
+                return pmui.TextInput, {"size": "small"}
 
     @override
     def _widget_type(
