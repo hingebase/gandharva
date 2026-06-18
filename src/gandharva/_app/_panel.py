@@ -17,6 +17,7 @@ __all__ = ["App"]
 import asyncio
 import contextlib
 import functools
+import inspect
 import math
 from collections.abc import Callable, Iterable, Mapping
 from typing import TYPE_CHECKING, cast
@@ -275,6 +276,8 @@ class _Sidebar(lumen.schema.JSONSchema):
         schema: Mapping[str, int],
     ) -> tuple[type, dict[str, Any]]:
         kwargs: dict[str, int | str] = {"step": 1}
+        if placeholder := _summary(schema):
+            kwargs["placeholder"] = placeholder
         start = max(
             schema.get("exclusiveMinimum", _NINF) + 1,
             schema.get("minimum", _NINF),
@@ -285,7 +288,7 @@ class _Sidebar(lumen.schema.JSONSchema):
         )
         match start > _NINF, end < math.inf:
             case True, True:
-                if start < end:
+                if start < end and "placeholder" not in kwargs:
                     kwargs["fixed_start"] = int(start)
                     kwargs["fixed_end"] = int(end)
                     return pn.widgets.EditableIntSlider, kwargs
@@ -308,6 +311,8 @@ class _Sidebar(lumen.schema.JSONSchema):
         schema: Mapping[str, float],
     ) -> tuple[type, dict[str, Any]]:
         kwargs: dict[str, float | str] = {"step": .1}
+        if placeholder := _summary(schema):
+            kwargs["placeholder"] = placeholder
         start = schema.get("exclusiveMinimum", _NINF)
         if start > _NINF:
             start = math.nextafter(start, math.inf)
@@ -318,7 +323,7 @@ class _Sidebar(lumen.schema.JSONSchema):
         end = min(end, schema.get("maximum", math.inf))
         match start > _NINF, end < math.inf:
             case True, True:
-                if start < end:
+                if start < end and "placeholder" not in kwargs:
                     kwargs["fixed_start"] = start
                     kwargs["fixed_end"] = end
                     return pn.widgets.EditableFloatSlider, kwargs
@@ -354,13 +359,13 @@ class _Sidebar(lumen.schema.JSONSchema):
                 return pmui.DatePicker, {}
             case {"format": "time"}:
                 return pmui.TimePicker, {"clock": "24h"}
-            case {"maxLength": max_length}:
-                return pmui.TextInput, {
-                    "max_length": max_length,
-                    "size": "small",
-                }
             case _:
-                return pmui.TextInput, {"size": "small"}
+                kwargs: dict[str, object] = {"size": "small"}
+                if max_length := schema.get("maxLength"):
+                    kwargs["max_length"] = max_length
+                if placeholder := _summary(schema):
+                    kwargs["placeholder"] = placeholder
+                return pmui.TextInput, kwargs
 
     @override
     def _widget_type(
@@ -370,3 +375,9 @@ class _Sidebar(lumen.schema.JSONSchema):
     ) -> tuple[type, dict[str, object]]:
         wtype, kwargs = super()._widget_type(prop, schema)  # pyright: ignore[reportUnknownMemberType, reportUnknownVariableType]
         return wtype, dict(kwargs, sizing_mode="stretch_width")  # pyright: ignore[reportUnknownArgumentType]
+
+
+def _summary(schema: Mapping[str, Any]) -> str:
+    if description := schema.get("description"):
+        return _base.summary(inspect.cleandoc(description))
+    return ""
