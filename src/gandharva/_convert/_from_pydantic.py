@@ -14,12 +14,35 @@
 
 __all__ = ["from_pydantic_field"]
 
+import types
+from typing import cast, get_args, get_origin
+
+import pandera.xarray as pa
 import pydantic.fields
+import xarray as xr
 
 
 def from_pydantic_field(
     source: object,
     target: pydantic.fields.FieldInfo,
 ) -> object:
-    del target
+    ann = cast("object", target.annotation)
+    if isinstance(ann, types.GenericAlias):
+        origin = get_origin(ann)
+        if issubclass(origin, xr.Dataset):
+            match get_args(ann):
+                case [type() as model] if issubclass(model, pa.DatasetModel):
+                    return _upath_to_xarray(source, model)
+                case _:
+                    return _upath_to_xarray(source)
+    elif isinstance(ann, type):
+        if issubclass(ann, xr.Dataset):
+            return _upath_to_xarray(source)
     return source
+
+
+def _upath_to_xarray(
+    source: object,
+    target: type[pa.DatasetModel] | None = None,
+) -> xr.Dataset:
+    raise NotImplementedError

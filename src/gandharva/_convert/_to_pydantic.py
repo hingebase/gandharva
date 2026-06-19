@@ -14,10 +14,39 @@
 
 __all__ = ["to_pydantic_field"]
 
-import pydantic.fields
+import types
+from typing import Annotated, cast, get_origin
+
+import xarray as xr
+from pydantic.fields import FieldInfo
+from pydantic.types import PathType
+from upath import UPath
+
+import gandharva as gd
+
+_UPath = Annotated[UPath, PathType("file")] | Annotated[UPath, PathType("dir")]
 
 
-def to_pydantic_field(
-    source: pydantic.fields.FieldInfo,
-) -> pydantic.fields.FieldInfo:
+def to_pydantic_field(source: FieldInfo) -> FieldInfo:
+    ann = cast("object", source.annotation)
+    if isinstance(ann, types.GenericAlias):
+        origin = get_origin(ann)
+        if issubclass(origin, xr.Dataset):
+            return _xarray_to_upath(source)
+    elif isinstance(ann, type):
+        if issubclass(ann, xr.Dataset):
+            return _xarray_to_upath(source)
     return source
+
+
+def _xarray_to_upath(source: FieldInfo) -> FieldInfo:
+    if not source.is_required():
+        message = (
+            "Default values or factory functions for input datasets are "
+            "unsupported"
+        )
+        raise gd.ApplicationBuilderError(message)
+    return FieldInfo.from_annotated_attribute(
+        cast("type", _UPath),
+        gd.Field(**source.asdict()["attributes"]),
+    )
