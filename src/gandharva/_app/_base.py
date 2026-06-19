@@ -12,7 +12,7 @@
 # implied. See the License for the specific language governing
 # permissions and limitations under the License.
 
-__all__ = ["App", "normalize"]
+__all__ = ["App", "normalize", "summary"]
 
 import abc
 import inspect
@@ -50,9 +50,7 @@ class App(abc.ABC):
 
     @classmethod
     def app_summary(cls) -> str:
-        if lines := cls.app_description().splitlines():
-            return lines[0].rstrip(".")
-        return ""
+        return summary(cls.app_description())
 
     @final
     def __init__(self, run_mode: Literal["api", "cli", "gui"]) -> None:
@@ -64,6 +62,12 @@ def normalize(name: str) -> str:
         pydantic.alias_generators.to_snake(name).removeprefix("_"),
         validate=True,
     )
+
+
+def summary(description: str) -> str:
+    # str.split(str) never returns a empty list, see
+    # https://docs.python.org/3/library/stdtypes.html#str.split
+    return description.split("\n", maxsplit=1)[0].rstrip(".").strip()
 
 
 os.environ.setdefault(
