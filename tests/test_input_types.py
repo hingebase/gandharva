@@ -64,6 +64,22 @@ def test_nested_types_gui() -> None:
     assert adapter.validate_python(editor2.schema)["type"] == "array"
 
 
+def test_union_type_gui() -> None:
+    """Test union-typed input fields in GUI mode."""
+    text, editor, row = _sidebar(_App2)
+    assert isinstance(text, pmui.TextInput)
+    assert isinstance(editor, pn.widgets.JSONEditor)
+    _assert_submit_button(row)
+    adapter = pydantic.TypeAdapter(dict[str, pydantic.JsonValue])
+    any_of = adapter.validate_python(editor.schema)["anyOf"]
+    assert isinstance(any_of, list)
+    types: set[pydantic.JsonValue] = set()
+    for schema in any_of:
+        assert isinstance(schema, dict)
+        types.add(schema["type"])
+    assert types == {"integer", "string"}
+
+
 class _BaseModel(pydantic.BaseModel):
     field: list[str] = []
 
@@ -85,6 +101,15 @@ class _App(gd.Gandharva):
         assert self.base_model.field == ["a", "b"]
         for i in range(2):
             assert self.data_class[i].field == i
+
+
+class _App2(gd.Gandharva):
+    homogeneous_union: pydantic.DirectoryPath | pydantic.FilePath
+    inhomogeneous_union: int | str
+
+    @override
+    def main(self) -> None:
+        pass
 
 
 def _assert_submit_button(row: pn.viewable.Viewable) -> None:

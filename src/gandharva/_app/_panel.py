@@ -28,7 +28,7 @@ import panel_material_ui as pmui
 import param
 import pydantic
 from hypothesis_jsonschema import _resolve  # noqa: PLC2701
-from typing_extensions import Any, final, override
+from typing_extensions import Any, TypeVar, final, override
 
 import gandharva as gd
 from gandharva import _convert
@@ -42,6 +42,8 @@ if TYPE_CHECKING:
     from panel.widgets import WidgetBase
 
 _NINF = -math.inf
+_T = TypeVar("_T", default=type["WidgetBase"])
+_WidgetType = tuple[_T, dict[str, object]]
 
 
 class App(_pydantic.App):
@@ -245,10 +247,7 @@ class _Sidebar(lumen.schema.JSONSchema):
         return sidebar, widgets
 
     @override
-    def _array_type(
-        self,
-        schema: Mapping[str, Any],
-    ) -> tuple["type[WidgetBase]", dict[str, object]]:
+    def _array_type(self, schema: Mapping[str, Any]) -> _WidgetType:
         match schema:
             case {"items": {"enum": [*options]}}:
                 return pmui.MultiSelect, {"options": options}
@@ -256,18 +255,12 @@ class _Sidebar(lumen.schema.JSONSchema):
                 return pn.widgets.JSONEditor, {"menu": False, "schema": schema}
 
     @override
-    def _boolean_type(
-        self,
-        schema: Mapping[str, object],
-    ) -> tuple[type, dict[str, object]]:
+    def _boolean_type(self, schema: Mapping[str, object]) -> _WidgetType[type]:
         # https://github.com/panel-extensions/panel-material-ui/issues/392
         return pmui.Checkbox, {"size": "small"}
 
     @override
-    def _enum(
-        self,
-        schema: Mapping[str, object],
-    ) -> tuple[type, dict[str, object]]:
+    def _enum(self, schema: Mapping[str, object]) -> _WidgetType[type]:
         return pmui.Select, {"options": schema["enum"], "size": "small"}
 
     @override
@@ -343,15 +336,12 @@ class _Sidebar(lumen.schema.JSONSchema):
     def _object_type(
         self,
         schema: Mapping[str, object],
-    ) -> tuple[type[pn.widgets.JSONEditor], dict[str, object]]:
+    ) -> _WidgetType[type[pn.widgets.JSONEditor]]:
         del self
         return pn.widgets.JSONEditor, {"menu": False, "schema": schema}
 
     @override
-    def _string_type(
-        self,
-        schema: Mapping[str, object],
-    ) -> tuple[type, dict[str, object]]:
+    def _string_type(self, schema: Mapping[str, object]) -> _WidgetType[type]:
         match schema:
             case {"format": "date-time"}:
                 return pmui.DatetimePicker, {}
@@ -371,10 +361,31 @@ class _Sidebar(lumen.schema.JSONSchema):
     def _widget_type(
         self,
         prop: str,
-        schema: Mapping[str, object],
-    ) -> tuple[type, dict[str, object]]:
-        wtype, kwargs = super()._widget_type(prop, schema)  # pyright: ignore[reportUnknownMemberType, reportUnknownVariableType]
-        return wtype, dict(kwargs, sizing_mode="stretch_width")  # pyright: ignore[reportUnknownArgumentType]
+        schema: Mapping[str, Any],
+    ) -> _WidgetType:
+        match schema:
+            case {"type": _} | {"enum": _}:
+                wtype, kwargs = cast(
+                    "_WidgetType",
+                    super()._widget_type(prop, schema),  # pyright: ignore[reportUnknownMemberType]
+                )
+            case {"anyOf": [first, *rest]}:
+                wtype, kwargs = self._widget_type(prop, first)
+                for subschema in rest:
+                    t, kw = self._widget_type(prop, subschema)
+                    if t != wtype or kw != kwargs:
+                        wtype, kwargs = self._object_type(schema)
+                        break
+                else:
+                    if (
+                        "placeholder" in wtype.param
+                        and (placeholder := _summary(schema))
+                    ):
+                        kwargs["placeholder"] = placeholder
+            case _:
+                wtype, kwargs = self._object_type(schema)
+        kwargs["sizing_mode"] = "stretch_width"
+        return wtype, kwargs
 
 
 def _summary(schema: Mapping[str, Any]) -> str:
