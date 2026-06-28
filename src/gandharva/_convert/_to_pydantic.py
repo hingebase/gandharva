@@ -15,16 +15,13 @@
 __all__ = ["to_pydantic_field"]
 
 import types
-from typing import Annotated, cast, get_origin
+from typing import cast, get_origin
 
+import upath
 import xarray as xr
 from pydantic.fields import FieldInfo
-from pydantic.types import PathType
-from upath import UPath
 
 import gandharva as gd
-
-_UPath = Annotated[UPath, PathType("file")] | Annotated[UPath, PathType("dir")]
 
 
 def to_pydantic_field(source: FieldInfo) -> FieldInfo:
@@ -47,6 +44,6 @@ def _xarray_to_upath(source: FieldInfo) -> FieldInfo:
         )
         raise gd.ApplicationBuilderError(message)
     return FieldInfo.from_annotated_attribute(
-        cast("type", _UPath),
+        upath.UPath,
         gd.Field(**source.asdict()["attributes"]),
     )
