@@ -26,7 +26,7 @@ import pandera.xarray as pa
 import pydantic.fields
 import xarray as xr
 from packaging.version import Version
-from typing_extensions import override
+from typing_extensions import Any, override
 from upath import UPath
 
 
@@ -96,7 +96,7 @@ def _upath_to_xarray(
         with enable_zarr_v3():
             data = xr.open_zarr(  # pyright: ignore[reportUnknownMemberType]
                 str(source),
-                chunks=cast("str", None),
+                chunks=cast("Any", None),
                 storage_options=source.storage_options,
                 zarr_format=3,
             )
