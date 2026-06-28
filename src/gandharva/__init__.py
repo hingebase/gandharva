@@ -18,13 +18,16 @@ __all__ = [
     "ApplicationBuilderError",
     "ApplicationRegisterError",
     "Coordinate",
+    "DataArrayConfig",
     "Dataset",
+    "DatasetConfig",
     "Error",
     "Field",
     "Gandharva",
     "run",
 ]
 
+from pandera.api.xarray.model_config import DataArrayConfig, DatasetConfig
 from pandera.typing.xarray import Coordinate, Dataset
 from pydantic import Field
 
