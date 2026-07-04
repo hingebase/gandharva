@@ -172,7 +172,7 @@ class App(_pydantic.App):
                 )
             ]
         else:
-            self = cls.from_pydantic(data, run_mode="gui")
+            self = cls(run_mode="gui")
             self.panel_event_loop = loop
             if curdoc := pn.state.curdoc:
                 ctx = curdoc.session_context
@@ -181,7 +181,8 @@ class App(_pydantic.App):
                     and (request := ctx.request)
                 ):
                     self.panel_request = cast("HTTPServerRequest", request)
-            result = self.main()
+            with self.from_pydantic(data):
+                result = self.main()
         return _convert.to_panel(result, cls)
 
     @classmethod

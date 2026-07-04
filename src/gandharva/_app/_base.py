@@ -24,6 +24,7 @@ from typing import TYPE_CHECKING, ClassVar, Literal
 import packaging.utils
 import platformdirs
 import pydantic.alias_generators
+import upath
 from typing_extensions import final
 
 if TYPE_CHECKING:
@@ -36,6 +37,10 @@ class App(abc.ABC):
 
     @abc.abstractmethod
     def main(self) -> object:
+        raise NotImplementedError
+
+    @abc.abstractmethod
+    def dataset_auth(self, source: upath.UPath, /) -> upath.UPath:
         raise NotImplementedError
 
     @classmethod

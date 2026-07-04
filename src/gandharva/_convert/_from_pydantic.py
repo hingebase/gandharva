@@ -21,6 +21,7 @@ import os
 import posixpath
 import types
 import warnings
+from collections.abc import Callable
 from typing import cast, get_args, get_origin
 
 import pandera.xarray as pa
@@ -28,7 +29,7 @@ import pydantic.fields
 import pydantic_core
 import xarray as xr
 from packaging.version import Version
-from typing_extensions import Any, override
+from typing_extensions import Any, Protocol, override
 from upath import UPath
 
 
@@ -47,21 +48,22 @@ def enable_zarr_v3() -> contextlib.AbstractContextManager[None, None]:
 
 def from_pydantic_field(
     source: object,
+    validator: "_Validator",
     target: pydantic.fields.FieldInfo,
-) -> object:
+) -> tuple[object, Callable[[], object] | None]:
     ann = cast("object", target.annotation)
     if isinstance(ann, types.GenericAlias):
         origin = get_origin(ann)
         if issubclass(origin, xr.Dataset):
             match get_args(ann):
                 case [type() as model] if issubclass(model, pa.DatasetModel):
-                    return _upath_to_xarray(source, model)
+                    return _upath_to_xarray(source, validator, model)
                 case _:
-                    return _upath_to_xarray(source)
+                    return _upath_to_xarray(source, validator)
     elif isinstance(ann, type):
         if issubclass(ann, xr.Dataset):
-            return _upath_to_xarray(source)
-    return source
+            return _upath_to_xarray(source, validator)
+    return source, None
 
 
 class _SuppressFutureWarning(contextlib.AbstractContextManager[None, None]):
@@ -88,12 +90,19 @@ class _SuppressFutureWarning(contextlib.AbstractContextManager[None, None]):
         self._ctx.__exit__(exc_type, exc_value, traceback)
 
 
+class _Validator(Protocol):
+    # More overloads may be added in the future
+    def __call__(self, source: UPath, /) -> UPath: ...
+
+
 def _upath_to_xarray(
     source: object,
+    validator: _Validator,
     target: type[pa.DatasetModel] | None = None,
-) -> xr.Dataset:
+) -> tuple[xr.Dataset, Callable[[], object]]:
     if not isinstance(source, UPath):
         raise TypeError
+    source = validator(source)
     if _zarr_json(source).is_file():
         with enable_zarr_v3():
             data = xr.open_zarr(  # pyright: ignore[reportUnknownMemberType]
@@ -111,9 +120,14 @@ def _upath_to_xarray(
             engine="netcdf4",
             auto_complex=True,
         )
+    cleanup = data.close
     if target:
-        data = target.validate(data)
-    return data
+        try:
+            data = target.validate(data)
+        except:
+            cleanup()
+            raise
+    return data, cleanup
 
 
 def _zarr_json(source: UPath) -> UPath:

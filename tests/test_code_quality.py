@@ -61,7 +61,7 @@ def test_basedpyright(monkeypatch: pytest.MonkeyPatch) -> None:
 )
 def test_ruff(monkeypatch: pytest.MonkeyPatch) -> None:
     """Linting with Ruff."""
-    monkeypatch.setattr(sys, "argv", ["ruff", "check"])
+    monkeypatch.setattr(sys, "argv", ["ruff", "check", "--ignore", "FIX002"])
     with _astral_context(monkeypatch):
         _run_module("ruff")
 

@@ -20,6 +20,7 @@ import functools
 import http.server
 import pathlib
 import socket
+import tempfile
 import threading
 import time
 from collections.abc import Callable, Generator
@@ -54,6 +55,19 @@ def server_port() -> int:
         sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         sock.bind(("127.0.0.1", 0))
         return sock.getsockname()[1]
+
+
+def test_default_protection() -> None:
+    """Remote clients should not be able to request local datasets."""
+    with (
+        TestClient(_ComplexReader()) as client,
+        pytest.raises(ValueError, match="Invalid protocol"),
+    ):
+        client.post(
+            "/",
+            # Any local path is fine even if not existing
+            json={"data": tempfile.gettempdir()},
+        )
 
 
 def test_lazy_loading_nc(server_port: int, tmp_path: pathlib.Path) -> None:

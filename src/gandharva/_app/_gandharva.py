@@ -28,7 +28,7 @@ from typing import TYPE_CHECKING, cast
 import anyio.from_thread
 import pandera.xarray as pa
 import xarray as xr
-from typing_extensions import Any, ParamSpec, TypeVar, disjoint_base
+from typing_extensions import Any, ParamSpec, TypeVar, disjoint_base, override
 from upath import UPath
 
 import gandharva as gd
@@ -139,6 +139,27 @@ class Gandharva(_fastapi.App, _panel.App):
                 zarr_format=3,
             )
         return destination
+
+    @override
+    def dataset_auth(self, source: UPath, /) -> UPath:
+        blocklist = {"data", "memory", "simplecache", "tar", "zip"}
+        match self.run_mode:
+            case "api" if _fastapi_remote_host(self.fastapi_request):
+                blocklist |= {"", "file", "local"}
+            case "gui":
+                try:
+                    request = self.panel_request
+                except AttributeError:
+                    pass
+                else:
+                    if _panel_remote_host(request):
+                        blocklist |= {"", "file", "local"}
+            case _:
+                pass
+        if source.protocol in blocklist:
+            message = f"Invalid protocol: {source.protocol!r}"
+            raise ValueError(message)
+        return source
 
     def dataset_metadata(self) -> dict[str, object]:
         meta: dict[str, object] = {}

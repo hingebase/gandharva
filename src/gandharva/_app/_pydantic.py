@@ -14,20 +14,14 @@
 
 __all__ = ["App"]
 
+import contextlib
 import functools
 import inspect
 import itertools
 import keyword
 import sys
-from collections.abc import Callable, Mapping, Sequence
-from typing import (
-    TYPE_CHECKING,
-    Annotated,
-    ClassVar,
-    Literal,
-    cast,
-    get_origin,
-)
+from collections.abc import Callable, Generator, Mapping, Sequence
+from typing import TYPE_CHECKING, Annotated, ClassVar, cast, get_origin
 
 import pydantic.alias_generators
 import pydantic_settings
@@ -36,7 +30,7 @@ import rich_argparse
 from pydantic._internal import _config  # noqa: PLC2701
 from pydantic.fields import FieldInfo
 from pydantic_settings import BaseSettings, PydanticBaseSettingsSource
-from typing_extensions import Any, Self, Unpack, override
+from typing_extensions import Any, Unpack, override
 from typing_inspection import introspection
 
 import gandharva as gd
@@ -142,18 +136,24 @@ class App(_base.App):
             **cls._pydantic_fields_for_validation(cli=True),
         )
 
-    @classmethod
-    def from_pydantic(
-        cls,
-        model: pydantic.BaseModel,
-        run_mode: Literal["api", "cli", "gui"],
-    ) -> Self:
-        self = cls(run_mode)
-        fields = cls._pydantic_fields_for_main()
-        for k, v in model:
-            if info := fields.get(k):
-                setattr(self, k, _convert.from_pydantic_field(v, info))
-        return self
+    @contextlib.contextmanager
+    def from_pydantic(self, model: pydantic.BaseModel) -> Generator[None]:
+        validator = self.dataset_auth
+        fields = self._pydantic_fields_for_main()
+        with contextlib.ExitStack() as stack:
+            for k, v in model:
+                if info := fields.get(k):
+                    data, cleanup = _convert.from_pydantic_field(
+                        v, validator, info)
+                    if cleanup:
+                        stack.callback(cleanup)
+                    setattr(self, k, data)
+            new_stack = stack.pop_all()
+        try:
+            yield
+        finally:
+            with contextlib.suppress(Exception):  # TODO(): log the error in #4
+                new_stack.close()
 
     def __init_subclass__(
         cls,
@@ -194,8 +194,9 @@ class App(_base.App):
                 child.json_ = True
             pydantic_settings.CliApp.run_subcommand(model)
             return
-        self = cls.from_pydantic(model, run_mode="cli")
-        result = self.main()
+        self = cls(run_mode="cli")
+        with self.from_pydantic(model):
+            result = self.main()
         _convert.to_cli(result, json=model.json_)
 
     @classmethod

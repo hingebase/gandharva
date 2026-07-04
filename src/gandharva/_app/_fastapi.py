@@ -95,8 +95,7 @@ class App(_pydantic.App):
         cls._fastapi_routes(app)
         return app
 
-    def _fastapi_main(self, request: fastapi.Request) -> object:
-        self.fastapi_request = request
+    def _fastapi_main(self) -> object:
         try:
             result = self.main()
             result = _convert.to_response(result)
@@ -129,13 +128,16 @@ class App(_pydantic.App):
                 request: fastapi.Request,
                 body: Annotated[model, fastapi.Body()],
             ) -> object:
-                self = cls.from_pydantic(body, run_mode="api")
-                return self._fastapi_main(request)
+                self = cls(run_mode="api")
+                self.fastapi_request = request
+                with self.from_pydantic(body):
+                    return self._fastapi_main()
         else:
             @router.get(**kwargs)
             def _(request: fastapi.Request) -> object:
                 self = cls(run_mode="api")
-                return self._fastapi_main(request)
+                self.fastapi_request = request
+                return self._fastapi_main()
 
         for child in cls.children:
             router.include_router(child.to_router())
