@@ -14,10 +14,36 @@
 
 __all__ = ["to_pydantic_field"]
 
-import pydantic.fields
+import types
+from typing import cast, get_origin
+
+import upath
+import xarray as xr
+from pydantic.fields import FieldInfo
+
+import gandharva as gd
 
 
-def to_pydantic_field(
-    source: pydantic.fields.FieldInfo,
-) -> pydantic.fields.FieldInfo:
+def to_pydantic_field(source: FieldInfo) -> FieldInfo:
+    ann = cast("object", source.annotation)
+    if isinstance(ann, types.GenericAlias):
+        origin = get_origin(ann)
+        if issubclass(origin, xr.Dataset):
+            return _xarray_to_upath(source)
+    elif isinstance(ann, type):
+        if issubclass(ann, xr.Dataset):
+            return _xarray_to_upath(source)
     return source
+
+
+def _xarray_to_upath(source: FieldInfo) -> FieldInfo:
+    if not source.is_required():
+        message = (
+            "Default values or factory functions for input datasets are "
+            "unsupported"
+        )
+        raise gd.ApplicationBuilderError(message)
+    return FieldInfo.from_annotated_attribute(
+        upath.UPath,
+        gd.Field(**source.asdict()["attributes"]),
+    )

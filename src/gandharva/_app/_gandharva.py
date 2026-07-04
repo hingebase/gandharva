@@ -15,16 +15,39 @@
 __all__ = ["Gandharva"]
 
 import asyncio
+import datetime
 import functools
+import getpass
 import inspect
+import ipaddress
+import pathlib
+import sys
 from collections.abc import Callable, Coroutine
+from typing import TYPE_CHECKING, cast
 
 import anyio.from_thread
-from typing_extensions import Any, ParamSpec, TypeVar, disjoint_base
+import pandera.xarray as pa
+import xarray as xr
+from typing_extensions import Any, ParamSpec, TypeVar, disjoint_base, override
+from upath import UPath
 
 import gandharva as gd
+from gandharva import _convert
 
-from . import _fastapi, _panel
+from . import _base, _fastapi, _panel
+
+if sys.version_info >= (3, 11):
+    from datetime import UTC
+else:
+    UTC = datetime.timezone.utc
+
+if TYPE_CHECKING:
+    from _typeshed import StrPath
+    from fastapi import Request
+    from metpy import (  # pyright: ignore[reportMissingTypeStubs]
+        MetPyDatasetAccessor,
+    )
+    from tornado.httputil import HTTPServerRequest
 
 _GandharvaT = TypeVar("_GandharvaT", bound=type["Gandharva"])
 _P = ParamSpec("_P")
@@ -76,7 +99,202 @@ class Gandharva(_fastapi.App, _panel.App):
                 loop = self.panel_event_loop
         return wrapper
 
+    def to_netcdf(
+        self,
+        source: xr.Dataset,
+        destination: "StrPath | UPath",
+        *,
+        model: type[pa.DatasetModel] | None = None,
+    ) -> str:
+        if isinstance(destination, UPath) and destination.storage_options:
+            raise NotImplementedError
+        source = self._dataset_postprocessing(source, model)
+        destination = str(destination)
+        source.to_netcdf(  # pyright: ignore[reportUnknownMemberType]
+            destination,
+            format="NETCDF4",
+            engine="netcdf4",
+            auto_complex=True,
+        )
+        return destination
+
+    def to_zarr(
+        self,
+        source: xr.Dataset,
+        destination: "StrPath | UPath",
+        *,
+        model: type[pa.DatasetModel] | None = None,
+    ) -> str:
+        source = self._dataset_postprocessing(source, model)
+        if isinstance(destination, UPath):
+            storage_options = dict(destination.storage_options)
+        else:
+            storage_options = None
+        destination = str(destination)
+        with _convert.enable_zarr_v3():
+            source.to_zarr(  # pyright: ignore[reportUnknownMemberType]
+                destination,
+                consolidated=False,
+                storage_options=storage_options,
+                zarr_format=3,
+            )
+        return destination
+
+    @override
+    def dataset_auth(self, source: UPath, /) -> UPath:
+        blocklist = {"data", "memory", "simplecache", "tar", "zip"}
+        match self.run_mode:
+            case "api" if _fastapi_remote_host(self.fastapi_request):
+                blocklist |= {"", "file", "local"}
+            case "gui":
+                try:
+                    request = self.panel_request
+                except AttributeError:
+                    pass
+                else:
+                    if _panel_remote_host(request):
+                        blocklist |= {"", "file", "local"}
+            case _:
+                pass
+        if source.protocol in blocklist:
+            message = f"Invalid protocol: {source.protocol!r}"
+            raise ValueError(message)
+        return source
+
+    def dataset_metadata(self) -> dict[str, object]:
+        meta: dict[str, object] = {}
+        if comment := self.dataset_comment():
+            meta["comment"] = comment
+        if conventions := self.dataset_conventions():
+            meta["Conventions"] = conventions
+        if history := self.dataset_history():
+            meta["history"] = history
+        if institution := self.dataset_institution():
+            meta["institution"] = institution
+        if references := self.dataset_references():
+            meta["references"] = references
+        if source := self.dataset_source():
+            meta["source"] = source
+        if title := self.dataset_title():
+            meta["title"] = title
+        return meta
+
+    def dataset_comment(self) -> str | None:
+        """Return the comment for output datasets.
+
+        See https://wiki.esipfed.org/Attribute_Convention_for_Data_Discovery_1-3#comment
+        """
+
+    def dataset_conventions(self) -> str | None:
+        """Return the conventions for output datasets.
+
+        See https://cfconventions.org/cf-conventions/cf-conventions.html#identification-of-conventions
+        """
+
+    def dataset_history(self) -> str | None:
+        lines: list[str] = []
+        for name in self._pydantic_fields_for_main():
+            match getattr(self, name, None):
+                case xr.Dataset(attrs={"history": str(history)}):
+                    lines += history.splitlines()
+                case _:
+                    pass
+        if line := self.dataset_history_line():
+            lines.append(line)
+        return "\n".join(lines) if lines else None
+
+    def dataset_history_line(self) -> str | None:
+        mtime = datetime.datetime.now(UTC).isoformat(timespec="seconds")
+        user = getpass.getuser()
+        prog = self.app_distribution_metadata().get("Name", "gandharva")
+        match self.run_mode:
+            case "api":
+                request = self.fastapi_request
+                if host := _fastapi_remote_host(request):
+                    user = host
+                args = request.url.path
+            case "cli":
+                argv = sys.argv.copy()
+                argv[0] = pathlib.Path(argv[0]).name
+                args = " ".join(argv)
+            case "gui":
+                try:
+                    request = self.panel_request
+                except AttributeError:
+                    args = ""
+                else:
+                    if host := _panel_remote_host(request):
+                        user = host
+                    args = request.path
+        return f"{mtime} {user} {prog} {args}"
+
+    def dataset_institution(self) -> str | None:
+        for name in self._pydantic_fields_for_main():
+            match getattr(self, name, None):
+                case xr.Dataset(attrs={"institution": str(institution)}):
+                    return institution
+                case _:
+                    pass
+        return None
+
+    def dataset_references(self) -> str | None:
+        """Return the references for output datasets.
+
+        See https://wiki.esipfed.org/Attribute_Convention_for_Data_Discovery_1-3#references
+        """
+
+    def dataset_source(self) -> str | None:
+        meta = self.app_distribution_metadata()
+        try:
+            return f"{_base.normalize(meta['Name'])}/{meta['Version']}"
+        except KeyError:
+            return None
+
+    def dataset_title(self) -> str | None:
+        """Return the title for output datasets.
+
+        See https://docs.unidata.ucar.edu/nug/2.0-draft/nug_conventions.html#title
+        """
+
+    def _dataset_postprocessing(
+        self,
+        source: xr.Dataset,
+        model: type[pa.DatasetModel] | None,
+    ) -> xr.Dataset:
+        try:
+            metpy = cast("MetPyDatasetAccessor", source.metpy)
+        except AttributeError:
+            pass
+        else:
+            source = cast("xr.Dataset", metpy.dequantify())
+        source = source.assign_attrs(self.dataset_metadata())
+        if model:
+            source = model.validate(source)
+        return source
+
     @classmethod
     def _registered(cls, parent: type["Gandharva"]) -> bool:
         children = parent.children
         return cls in children or any(map(cls._registered, children))
+
+
+def _fastapi_remote_host(request: "Request") -> str | None:
+    match request.scope:
+        case {"client": [host, _]} if not _is_loopback(host):
+            return host
+        case _:
+            return None
+
+
+def _is_loopback(host: str) -> bool:
+    try:
+        address = ipaddress.ip_address(host)
+    except ValueError:
+        return host == "localhost"
+    return address.is_loopback
+
+
+def _panel_remote_host(request: "HTTPServerRequest") -> str | None:
+    if (host := request.remote_ip) and not _is_loopback(host):
+        return host
+    return None
