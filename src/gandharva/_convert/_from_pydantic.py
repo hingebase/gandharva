@@ -18,12 +18,14 @@ import contextlib
 import functools
 import importlib.metadata
 import os
+import posixpath
 import types
 import warnings
 from typing import cast, get_args, get_origin
 
 import pandera.xarray as pa
 import pydantic.fields
+import pydantic_core
 import xarray as xr
 from packaging.version import Version
 from typing_extensions import Any, override
@@ -92,12 +94,13 @@ def _upath_to_xarray(
 ) -> xr.Dataset:
     if not isinstance(source, UPath):
         raise TypeError
-    if (source / "zarr.json").is_file():
+    if _zarr_json(source).is_file():
         with enable_zarr_v3():
             data = xr.open_zarr(  # pyright: ignore[reportUnknownMemberType]
                 str(source),
                 chunks=cast("Any", None),
-                storage_options=source.storage_options,
+                consolidated=False,
+                storage_options=source.storage_options or None,
                 zarr_format=3,
             )
     else:
@@ -111,3 +114,22 @@ def _upath_to_xarray(
     if target:
         data = target.validate(data)
     return data
+
+
+def _zarr_json(source: UPath) -> UPath:
+    if source.protocol:
+        url = pydantic_core.Url(str(source))
+        if (host := url.host) and (path := url.path):
+            url = pydantic_core.Url.build(
+                scheme=url.scheme,
+                username=url.username,
+                password=url.password,
+                host=host,
+                port=url.port,
+                # https://github.com/pydantic/pydantic-core/pull/1173
+                path=posixpath.join(path.lstrip("/"), "zarr.json"),
+                query=url.query,
+                fragment=url.fragment,
+            )
+            return UPath(str(url), **source.storage_options)
+    return source / "zarr.json"

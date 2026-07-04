@@ -47,6 +47,7 @@ osx-arm64 = { dependencies = { libblas = { build = "*accelerate" } } }
 win-64 = { dependencies = { libblas = { build = "*_mkl" } } }
 
 [dependencies]
+aiohttp = ">=3.13.0"
 attrs = ">=25.4.0"
 basedpyright = ">=1.39.8"
 gandharva = { path = "." }
@@ -55,6 +56,7 @@ httpx2 = ">=2.2.0"
 metpy = ">=1.7.0,<2.0.0"
 pandas-stubs = ">=1.4.2,<4.0.0"
 pytest = ">=9.1.1"
+uvicorn = ">=0.38.0"
 
 [environments]
 default = ["py310"]

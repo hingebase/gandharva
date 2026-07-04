@@ -134,6 +134,7 @@ class Gandharva(_fastapi.App, _panel.App):
         with _convert.enable_zarr_v3():
             source.to_zarr(  # pyright: ignore[reportUnknownMemberType]
                 destination,
+                consolidated=False,
                 storage_options=storage_options,
                 zarr_format=3,
             )
