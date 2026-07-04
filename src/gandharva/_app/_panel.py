@@ -27,6 +27,7 @@ import panel as pn
 import panel_material_ui as pmui
 import param
 import pydantic
+from bokeh.server.contexts import BokehSessionContext
 from hypothesis_jsonschema import _resolve  # noqa: PLC2701
 from typing_extensions import Any, TypeVar, final, override
 
@@ -40,6 +41,7 @@ if TYPE_CHECKING:
     from panel.layout import ListLike
     from panel.viewable import Viewable
     from panel.widgets import WidgetBase
+    from tornado.httputil import HTTPServerRequest
 
 _NINF = -math.inf
 _T = TypeVar("_T", default=type["WidgetBase"])
@@ -48,6 +50,7 @@ _WidgetType = tuple[_T, dict[str, object]]
 
 class App(_pydantic.App):
     panel_event_loop: asyncio.AbstractEventLoop
+    panel_request: "HTTPServerRequest"
 
     @classmethod
     def panel_button_params(cls) -> gd.typing.ButtonParameters:
@@ -171,6 +174,13 @@ class App(_pydantic.App):
         else:
             self = cls.from_pydantic(data, run_mode="gui")
             self.panel_event_loop = loop
+            if curdoc := pn.state.curdoc:
+                ctx = curdoc.session_context
+                if (
+                    isinstance(ctx, BokehSessionContext)
+                    and (request := ctx.request)
+                ):
+                    self.panel_request = cast("HTTPServerRequest", request)
             result = self.main()
         return _convert.to_panel(result, cls)
 

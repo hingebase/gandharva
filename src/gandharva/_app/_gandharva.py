@@ -15,9 +15,13 @@
 __all__ = ["Gandharva"]
 
 import asyncio
+import datetime
 import functools
-import importlib.metadata
+import getpass
 import inspect
+import ipaddress
+import pathlib
+import sys
 from collections.abc import Callable, Coroutine
 from typing import TYPE_CHECKING, cast
 
@@ -32,11 +36,18 @@ from gandharva import _convert
 
 from . import _base, _fastapi, _panel
 
+if sys.version_info >= (3, 11):
+    from datetime import UTC
+else:
+    UTC = datetime.timezone.utc
+
 if TYPE_CHECKING:
     from _typeshed import StrPath
+    from fastapi import Request
     from metpy import (  # pyright: ignore[reportMissingTypeStubs]
         MetPyDatasetAccessor,
     )
+    from tornado.httputil import HTTPServerRequest
 
 _GandharvaT = TypeVar("_GandharvaT", bound=type["Gandharva"])
 _P = ParamSpec("_P")
@@ -171,7 +182,29 @@ class Gandharva(_fastapi.App, _panel.App):
         return "\n".join(lines) if lines else None
 
     def dataset_history_line(self) -> str | None:
-        raise NotImplementedError
+        mtime = datetime.datetime.now(UTC).isoformat(timespec="seconds")
+        user = getpass.getuser()
+        prog = self.app_distribution_metadata().get("Name", "gandharva")
+        match self.run_mode:
+            case "api":
+                request = self.fastapi_request
+                if host := _fastapi_remote_host(request):
+                    user = host
+                args = request.url.path
+            case "cli":
+                argv = sys.argv.copy()
+                argv[0] = pathlib.Path(argv[0]).name
+                args = " ".join(argv)
+            case "gui":
+                try:
+                    request = self.panel_request
+                except AttributeError:
+                    args = ""
+                else:
+                    if host := _panel_remote_host(request):
+                        user = host
+                    args = request.path
+        return f"{mtime} {user} {prog} {args}"
 
     def dataset_institution(self) -> str | None:
         for name in self._pydantic_fields_for_main():
@@ -189,14 +222,11 @@ class Gandharva(_fastapi.App, _panel.App):
         """
 
     def dataset_source(self) -> str | None:
-        for module in type(self).__module__.split(".", 1)[0], "gandharva":
-            try:
-                version = importlib.metadata.version(module)
-            except ModuleNotFoundError:  # noqa: PERF203
-                pass
-            else:
-                return f"{_base.normalize(module)}/{version}"
-        return None
+        meta = self.app_distribution_metadata()
+        try:
+            return f"{_base.normalize(meta['Name'])}/{meta['Version']}"
+        except KeyError:
+            return None
 
     def dataset_title(self) -> str | None:
         """Return the title for output datasets.
@@ -224,3 +254,25 @@ class Gandharva(_fastapi.App, _panel.App):
     def _registered(cls, parent: type["Gandharva"]) -> bool:
         children = parent.children
         return cls in children or any(map(cls._registered, children))
+
+
+def _fastapi_remote_host(request: "Request") -> str | None:
+    match request.scope:
+        case {"client": [host, _]} if not _is_loopback(host):
+            return host
+        case _:
+            return None
+
+
+def _is_loopback(host: str) -> bool:
+    try:
+        address = ipaddress.ip_address(host)
+    except ValueError:
+        return host == "localhost"
+    return address.is_loopback
+
+
+def _panel_remote_host(request: "HTTPServerRequest") -> str | None:
+    if (host := request.remote_ip) and not _is_loopback(host):
+        return host
+    return None

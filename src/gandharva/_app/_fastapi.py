@@ -14,7 +14,6 @@
 
 __all__ = ["App"]
 
-import importlib.metadata
 import inspect
 from email.message import Message
 from typing import Annotated, Literal, no_type_check
@@ -89,14 +88,10 @@ class App(_pydantic.App):
     ) -> fastapi.FastAPI | Self:
         if run_mode:
             return super().__new__(cls)
-        distribution_name = cls.__module__.split(".", 1)[0]
-        try:
-            meta = importlib.metadata.metadata(distribution_name)
-        except ModuleNotFoundError:
-            message = Message()
-        else:
-            message = meta if isinstance(meta, Message) else Message()
-        app = fastapi.FastAPI(**cls.fastapi_app_params(message))
+        meta = cls.app_distribution_metadata()
+        if meta.get("Name", "gandharva") == "gandharva":
+            meta = Message()
+        app = fastapi.FastAPI(**cls.fastapi_app_params(meta))
         cls._fastapi_routes(app)
         return app
 

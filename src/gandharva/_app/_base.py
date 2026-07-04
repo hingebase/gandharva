@@ -15,8 +15,10 @@
 __all__ = ["App", "normalize", "summary"]
 
 import abc
+import importlib.metadata
 import inspect
 import os
+from email.message import Message
 from typing import TYPE_CHECKING, ClassVar, Literal
 
 import packaging.utils
@@ -43,6 +45,19 @@ class App(abc.ABC):
         # Unlike `inspect.getdoc`, we are not interested in the base
         # classes
         return ""
+
+    @classmethod
+    @final
+    def app_distribution_metadata(cls) -> Message:
+        for distribution_name in cls.__module__.split(".", 1)[0], "gandharva":
+            try:
+                meta = importlib.metadata.metadata(distribution_name)
+            except ModuleNotFoundError:  # noqa: PERF203
+                pass
+            else:
+                if isinstance(meta, Message):
+                    return meta
+        return Message()
 
     @classmethod
     def app_normalized_name(cls) -> str:
