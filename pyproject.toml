@@ -46,7 +46,7 @@ dependencies = [
     "panel >=1.9.1,<2.0.0",
     "panel-material-ui >=0.12.0,<2.0.0",
     "platformdirs >=4.6.0,<5.0.0",
-    "pydantic >=2.12.1,<4.0.0",
+    "pydantic >=2.12.4,<4.0.0",
     "pydantic-settings >=2.13.0,<4.0.0",
     "rich >=14.2.0",
     "rich-argparse >=1.7.2,<2.0.0",
@@ -70,7 +70,7 @@ dev = [
     "httpx2 >=2.2.0",
     "nodejs-wheel-binaries <=20.18.0; sys_platform == 'darwin' and platform_machine == 'x86_64'",
     "pytest >=9.1.1",
-    "ruff >=0.15.20",
+    "ruff >=0.15.21",
     "uvicorn >=0.38.0",
 ]
 
