@@ -57,7 +57,7 @@ class App(abc.ABC):
         for distribution_name in cls.__module__.split(".", 1)[0], "gandharva":
             try:
                 meta = importlib.metadata.metadata(distribution_name)
-            except ModuleNotFoundError:  # noqa: PERF203
+            except ModuleNotFoundError:  # ruff: ignore[try-except-in-loop]
                 pass
             else:
                 if isinstance(meta, Message):
