@@ -28,7 +28,7 @@ __all__ = [
 ]
 
 from pandera.api.xarray.model_config import DataArrayConfig, DatasetConfig
-from pandera.typing.xarray import Coordinate, Dataset
+from pandera.typing.xarray import Coordinate
 from pydantic import Field
 
 from . import typing as typing
@@ -39,3 +39,4 @@ from .exceptions import (
     ApplicationRegisterError,
     Error,
 )
+from .typing import Dataset

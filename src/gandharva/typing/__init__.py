@@ -20,6 +20,7 @@ __all__ = [
     "BasicTemplateParameters",
     "ButtonParameters",
     "DataFrameParameters",
+    "Dataset",
     "FastAPIParameters",
     "HTMLParameters",
     "JSONSchemaParameters",
@@ -39,3 +40,4 @@ from ._panel import (
     JSONSchemaParameters,
     MarkdownParameters,
 )
+from ._xarray import Dataset
