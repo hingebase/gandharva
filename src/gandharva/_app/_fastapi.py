@@ -99,7 +99,7 @@ class App(_pydantic.App):
         try:
             result = self.main()
             result = _convert.to_response(result)
-        except Exception as e:  # noqa: BLE001
+        except Exception as e:  # ruff: ignore[blind-except]
             return {"code": 1, "message": str(e), "data": None}
         return result
 

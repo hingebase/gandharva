@@ -160,7 +160,7 @@ class _ComplexReader(gd.Gandharva):
     @override
     def main(self) -> None:
         da = self.data.data_vars["da"]
-        assert not da._in_memory  # noqa: SLF001  # pyright: ignore[reportPrivateUsage]
+        assert not da._in_memory  # ruff: ignore[private-member-access]  # pyright: ignore[reportPrivateUsage]
 
 
 class _ComplexWriter(gd.Gandharva):

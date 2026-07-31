@@ -28,7 +28,7 @@ import panel_material_ui as pmui
 import param
 import pydantic
 from bokeh.server.contexts import BokehSessionContext
-from hypothesis_jsonschema import _resolve  # noqa: PLC2701
+from hypothesis_jsonschema import _resolve  # ruff: ignore[import-private-name]
 from typing_extensions import Any, TypeVar, final, override
 
 import gandharva as gd
@@ -82,8 +82,8 @@ class App(_pydantic.App):
         return {"sidebar_width": 500, "title": title[:1].upper() + title[1:]}
 
     @classmethod
-    def __panel__(cls) -> "TViewable":  # noqa: PLW3201
-        async def main(clicked: bool) -> "Viewable":  # noqa: FBT001
+    def __panel__(cls) -> "TViewable":  # ruff: ignore[bad-dunder-method-name]
+        async def main(clicked: bool) -> "Viewable":  # ruff: ignore[boolean-type-hint-positional-argument]
             loop = asyncio.get_running_loop()
             func = functools.partial(
                 cls._panel_main, loop, model, widgets, clicked=clicked)
@@ -200,7 +200,7 @@ class App(_pydantic.App):
                 )
             try:
                 result = callback()
-            except Exception as e:  # noqa: BLE001
+            except Exception as e:  # ruff: ignore[blind-except]
                 result = _convert.gui_error_handler(e)
             return result, stack.pop_all()
 

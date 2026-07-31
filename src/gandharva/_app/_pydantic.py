@@ -27,7 +27,7 @@ import pydantic.alias_generators
 import pydantic_settings
 import rich.markdown
 import rich_argparse
-from pydantic._internal import _config  # noqa: PLC2701
+from pydantic._internal import _config  # ruff: ignore[import-private-name]
 from pydantic.fields import FieldInfo
 from pydantic_settings import BaseSettings, PydanticBaseSettingsSource
 from typing_extensions import Any, Unpack, override
