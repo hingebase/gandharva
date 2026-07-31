@@ -102,6 +102,9 @@ select = ["ALL"]
 [tool.ruff.lint.pycodestyle]
 max-doc-length = 72
 
+[tool.ruff.lint.pylint]
+allow-dunder-method-names = ["__panel__"]
+
 [tool.tombi.files]
 exclude = [".venv/**/*.toml"]
 

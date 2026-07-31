@@ -82,7 +82,7 @@ class App(_pydantic.App):
         return {"sidebar_width": 500, "title": title[:1].upper() + title[1:]}
 
     @classmethod
-    def __panel__(cls) -> "TViewable":  # ruff: ignore[bad-dunder-method-name]
+    def __panel__(cls) -> "TViewable":
         async def main(clicked: bool) -> "Viewable":  # ruff: ignore[boolean-type-hint-positional-argument]
             loop = asyncio.get_running_loop()
             func = functools.partial(
