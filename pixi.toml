@@ -19,7 +19,7 @@ channels = ["https://prefix.dev/pixi-build-backends", "conda-forge"]
 ignore-pypi-mapping = true
 
 [package.host-dependencies]
-uv = ">=0.10.2,<0.12.0"
+uv = ">=0.10.2,<0.13.0"
 
 [package.run-dependencies]
 fastapi-core = ">=0.119.1,<2.0.0"
@@ -68,10 +68,10 @@ channels = ["conda-forge", "https://prefix.dev/github-releases"]
 dependencies = { python-gil = "3.10.*" }
 
 [feature.py310.target]
-linux = { dependencies = { ruff = ">=0.15.22" } }
-osx-64 = { dependencies = { ruff = { version = ">=0.15.22", channel = "https://prefix.dev/github-releases" } } }
-osx-arm64 = { dependencies = { ruff = ">=0.15.22" } }
-win-64 = { dependencies = { ruff = ">=0.15.22" } }
+linux = { dependencies = { ruff = ">=0.16.1" } }
+osx-64 = { dependencies = { ruff = { version = ">=0.16.1", channel = "https://prefix.dev/github-releases" } } }
+osx-arm64 = { dependencies = { ruff = ">=0.16.1" } }
+win-64 = { dependencies = { ruff = ">=0.16.1" } }
 
 [feature.py314.dependencies]
 python-gil = "3.14.*"
