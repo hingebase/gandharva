@@ -59,6 +59,9 @@ dependencies = [
 typing = [
     "metpy >=1.7.0,<2.0.0",
     "pandas-stubs >=1.4.2,<4.0.0",
+    "pyproj <=3.6.1; sys_platform == 'darwin' and platform_machine == 'x86_64' and platform_release < '21' and python_version < '3.13'",
+    "pyproj <=3.6.1; sys_platform == 'darwin' and platform_machine == 'arm64' and platform_release < '23' and python_version < '3.13'",
+    "pyproj <=3.7.0; sys_platform == 'darwin' and platform_machine == 'x86_64' and platform_release < '22' and python_version < '3.14'",
 ]
 
 [dependency-groups]
@@ -68,7 +71,8 @@ dev = [
     "basedpyright >=1.39.9",
     "httpx >=0.28.1",
     "httpx2 >=2.2.0",
-    "nodejs-wheel-binaries <=20.18.0; sys_platform == 'darwin' and platform_machine == 'x86_64'",
+    "nodejs-wheel-binaries <=20.18.0; sys_platform == 'darwin' and platform_release < '20'",
+    "nodejs-wheel-binaries <=22.20.0; sys_platform == 'darwin' and platform_release < '22'",
     "pytest >=9.1.1",
     "ruff >=0.16.1",
     "uvicorn >=0.38.0",
