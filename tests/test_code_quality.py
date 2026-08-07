@@ -15,6 +15,7 @@
 """Type checking and linting."""
 
 import contextlib
+import importlib.metadata
 import os
 import runpy
 import subprocess  # ruff: ignore[suspicious-subprocess-import]
@@ -61,9 +62,15 @@ def test_basedpyright(monkeypatch: pytest.MonkeyPatch) -> None:
 )
 def test_ruff(monkeypatch: pytest.MonkeyPatch) -> None:
     """Linting with Ruff."""
-    monkeypatch.setattr(sys, "argv", ["ruff", "check", "--ignore", "FIX002"])
-    with _astral_context(monkeypatch):
-        _run_module("ruff")
+    args = ["ruff", "check", "--ignore", "FIX002"]
+    try:
+        importlib.metadata.distribution("ruff")
+    except ModuleNotFoundError:
+        subprocess.run(args, check=True)  # ruff: ignore[subprocess-without-shell-equals-true]
+    else:
+        monkeypatch.setattr(sys, "argv", args)
+        with _astral_context(monkeypatch):
+            _run_module("ruff")
 
 
 def _run_module(module_name: str) -> None:
