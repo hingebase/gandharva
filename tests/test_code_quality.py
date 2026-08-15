@@ -17,9 +17,11 @@
 import contextlib
 import importlib.metadata
 import os
+import pathlib
 import runpy
 import subprocess  # ruff: ignore[suspicious-subprocess-import]
 import sys
+import sysconfig
 from collections.abc import Generator
 from typing import NoReturn
 
@@ -71,6 +73,30 @@ def test_ruff(monkeypatch: pytest.MonkeyPatch) -> None:
         monkeypatch.setattr(sys, "argv", args)
         with _astral_context(monkeypatch):
             _run_module("ruff")
+
+
+@pytest.mark.skipif(
+    os.getenv("PIXI_PROJECT_NAME") == "gandharva"
+        and os.getenv("PIXI_ENVIRONMENT_NAME", "default") != "default",
+    reason="It's unnecessary to run Tombi for each Python environment",
+)
+def test_tombi() -> None:
+    """Linting with Tombi."""
+    tombi = "tombi" + sysconfig.get_config_var("EXE")
+    try:
+        dist = importlib.metadata.distribution("tombi")
+    except ModuleNotFoundError:
+        pass
+    else:
+        if paths := dist.files:
+            for p in paths:
+                if p.name == tombi:
+                    match dist.locate_file(p):
+                        case pathlib.Path() as tombi:
+                            break
+                        case _:
+                            break
+    subprocess.run([tombi, "lint"], check=True)  # ruff: ignore[subprocess-without-shell-equals-true]
 
 
 def _run_module(module_name: str) -> None:
