@@ -23,12 +23,20 @@ from collections.abc import Callable, Iterable, Mapping
 from typing import TYPE_CHECKING, cast
 
 import lumen.schema  # pyright: ignore[reportMissingTypeStubs]
+import matplotlib as mpl
+import matplotlib.figure as mfigure
 import panel as pn
 import panel_material_ui as pmui
 import param
 import pydantic
 from bokeh.server.contexts import BokehSessionContext
 from hypothesis_jsonschema import _resolve  # ruff: ignore[import-private-name]
+from matplotlib.collections import (
+    _MeshData,  # pyright: ignore[reportPrivateUsage]  # ruff: ignore[import-private-name]
+)
+from matplotlib.image import (
+    _ImageBase,  # pyright: ignore[reportPrivateUsage]  # ruff: ignore[import-private-name]
+)
 from typing_extensions import Any, TypeVar, final, override
 
 import gandharva as gd
@@ -37,12 +45,14 @@ from gandharva import _convert
 from . import _base, _pydantic
 
 if TYPE_CHECKING:
+    from matplotlib.artist import Artist
     from panel.io.application import TViewable
     from panel.layout import ListLike
     from panel.viewable import Viewable
     from panel.widgets import WidgetBase
     from tornado.httputil import HTTPServerRequest
 
+_PREFER_PNG = (_ImageBase, _MeshData)
 _NINF = -math.inf
 _T = TypeVar("_T", default=type["WidgetBase"])
 _WidgetType = tuple[_T, dict[str, object]]
@@ -73,6 +83,19 @@ class App(_pydantic.App):
         return {}
 
     @classmethod
+    def panel_matplotlib_params(
+        cls,
+        fig: mfigure.Figure,
+    ) -> gd.typing.MatplotlibParameters:
+        kwargs: gd.typing.MatplotlibParameters = {
+            "format": "png" if fig.findobj(_match) else "svg",
+        }
+        dpi = round(fig.dpi)
+        if dpi > 0:
+            kwargs["dpi"] = dpi
+        return kwargs
+
+    @classmethod
     def panel_template_class(cls) -> type[pn.template.base.BasicTemplate]:
         return _MaterialTemplate
 
@@ -84,6 +107,7 @@ class App(_pydantic.App):
     @classmethod
     def __panel__(cls) -> "TViewable":
         async def main(clicked: bool) -> "Viewable":  # ruff: ignore[boolean-type-hint-positional-argument]
+            mpl.use("agg")  # This takes ~1 μs if the backend is already "agg"
             loop = asyncio.get_running_loop()
             func = functools.partial(
                 cls._panel_main, loop, model, widgets, clicked=clicked)
@@ -397,6 +421,10 @@ class _Sidebar(lumen.schema.JSONSchema):
                 wtype, kwargs = self._object_type(schema)
         kwargs["sizing_mode"] = "stretch_width"
         return wtype, kwargs
+
+
+def _match(x: "Artist") -> bool:
+    return isinstance(x, _PREFER_PNG)
 
 
 def _summary(schema: Mapping[str, Any]) -> str:

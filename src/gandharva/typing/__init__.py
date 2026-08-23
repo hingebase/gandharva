@@ -25,6 +25,7 @@ __all__ = [
     "HTMLParameters",
     "JSONSchemaParameters",
     "MarkdownParameters",
+    "MatplotlibParameters",
 ]
 
 from ._fastapi import (
@@ -39,5 +40,6 @@ from ._panel import (
     HTMLParameters,
     JSONSchemaParameters,
     MarkdownParameters,
+    MatplotlibParameters,
 )
 from ._xarray import Dataset
