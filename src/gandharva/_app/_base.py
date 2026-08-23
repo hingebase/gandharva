@@ -72,6 +72,15 @@ class App(abc.ABC):
     def app_summary(cls) -> str:
         return summary(cls.app_description())
 
+    @classmethod
+    def app_title(cls, meta: Message | None = None) -> str | None:
+        if meta is None:
+            meta = cls.app_distribution_metadata()
+        if name := meta.get("Name"):
+            title = name.replace("-", " ")
+            return title[:1].upper() + title[1:]
+        return None
+
     @final
     def __init__(self, run_mode: Literal["api", "cli", "gui"]) -> None:
         self.run_mode = run_mode

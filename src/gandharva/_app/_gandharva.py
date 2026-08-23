@@ -26,13 +26,16 @@ from collections.abc import Callable, Coroutine
 from typing import TYPE_CHECKING, cast
 
 import anyio.from_thread
+import holoviews as hv  # pyright: ignore[reportMissingTypeStubs]
+import matplotlib.figure as mfigure
 import pandera.xarray as pa
 import xarray as xr
+from matplotlib import animation
 from typing_extensions import Any, ParamSpec, TypeVar, disjoint_base, override
 from upath import UPath
 
 import gandharva as gd
-from gandharva import _convert
+from gandharva import _convert, _utils
 
 from . import _base, _fastapi, _panel
 
@@ -56,6 +59,12 @@ _T = TypeVar("_T")
 
 @disjoint_base
 class Gandharva(_fastapi.App, _panel.App):
+    @override
+    def __format__(self, format_spec: str, /) -> str:
+        if format_spec == "$":
+            return "$" if self.run_mode == "cli" else "$$"
+        return super().__format__(format_spec)
+
     @classmethod
     def register(cls, child: _GandharvaT) -> _GandharvaT:
         if inspect.isabstract(cls) or inspect.isabstract(child):
@@ -98,6 +107,24 @@ class Gandharva(_fastapi.App, _panel.App):
 
                 loop = self.panel_event_loop
         return wrapper
+
+    def to_matplotlib(
+        self,
+        plot: hv.core.Dimensioned,
+        *,
+        dpi: int = 0,
+        fps: int = 1,
+    ) -> mfigure.Figure | animation.TimedAnimation:
+        html = self.run_mode != "cli"
+        if info := _utils.undisplayable_info(plot, html=html):
+            match self.run_mode:
+                case "api":
+                    raise NotImplementedError
+                case "cli":
+                    raise TypeError(info)
+                case "gui":
+                    raise NotImplementedError
+        return hv.render(plot, backend="matplotlib", dpi=dpi, fps=fps)  # pyright: ignore[reportUnknownMemberType, reportUnknownVariableType]
 
     def to_netcdf(
         self,

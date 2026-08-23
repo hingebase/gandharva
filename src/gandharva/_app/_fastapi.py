@@ -50,8 +50,8 @@ class App(_pydantic.App):
         for key in "description", "version":
             if value := meta.get(key):
                 kwargs[key] = value
-        if name := meta.get("Name"):
-            kwargs["title"] = name.replace("-", " ").title()
+        if title := cls.app_title(meta):
+            kwargs["title"] = title
         if identifier := meta.get("License-Expression"):
             kwargs["license_info"] = {
                 "name": "License",
