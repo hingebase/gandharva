@@ -285,7 +285,14 @@ class _Sidebar(lumen.schema.JSONSchema):
     def _array_type(self, schema: Mapping[str, Any]) -> _WidgetType:
         match schema:
             case {"items": {"enum": [*options]}}:
-                return pmui.MultiSelect, {"options": options}
+                kwargs: dict[str, object] = {"options": options}
+                if helper_text := _helper_text(schema):
+                    # The implementation of `pmui.(Multi)Select` is
+                    # different from other widgets, and `sx` doesn't
+                    # apply to the helper text
+                    # Truncating the description to the summary line
+                    kwargs["helper_text"] = _base.summary(helper_text)
+                return pmui.MultiSelect, kwargs
             case _:
                 return pn.widgets.JSONEditor, {"menu": False, "schema": schema}
 
@@ -296,16 +303,17 @@ class _Sidebar(lumen.schema.JSONSchema):
 
     @override
     def _enum(self, schema: Mapping[str, object]) -> _WidgetType[type]:
-        return pmui.Select, {"options": schema["enum"], "size": "small"}
+        kwargs = {"options": schema["enum"], "size": "small"}
+        if helper_text := _helper_text(schema):
+            kwargs["helper_text"] = _base.summary(helper_text)
+        return pmui.Select, kwargs
 
     @override
     def _integer_type(
         self,
         schema: Mapping[str, int],
     ) -> tuple[type, dict[str, Any]]:
-        kwargs: dict[str, int | str] = {"step": 1}
-        if placeholder := _summary(schema):
-            kwargs["placeholder"] = placeholder
+        kwargs = _kwargs(schema)
         start = max(
             schema.get("exclusiveMinimum", _NINF) + 1,
             schema.get("minimum", _NINF),
@@ -316,7 +324,7 @@ class _Sidebar(lumen.schema.JSONSchema):
         )
         match start > _NINF, end < math.inf:
             case True, True:
-                if start < end and "placeholder" not in kwargs:
+                if start < end and "helper_text" not in kwargs:
                     kwargs["fixed_start"] = int(start)
                     kwargs["fixed_end"] = int(end)
                     return pn.widgets.EditableIntSlider, kwargs
@@ -338,9 +346,7 @@ class _Sidebar(lumen.schema.JSONSchema):
         self,
         schema: Mapping[str, float],
     ) -> tuple[type, dict[str, Any]]:
-        kwargs: dict[str, float | str] = {"step": .1}
-        if placeholder := _summary(schema):
-            kwargs["placeholder"] = placeholder
+        kwargs = _kwargs(schema)
         start = schema.get("exclusiveMinimum", _NINF)
         if start > _NINF:
             start = math.nextafter(start, math.inf)
@@ -351,7 +357,7 @@ class _Sidebar(lumen.schema.JSONSchema):
         end = min(end, schema.get("maximum", math.inf))
         match start > _NINF, end < math.inf:
             case True, True:
-                if start < end and "placeholder" not in kwargs:
+                if start < end and "helper_text" not in kwargs:
                     kwargs["fixed_start"] = start
                     kwargs["fixed_end"] = end
                     return pn.widgets.EditableFloatSlider, kwargs
@@ -377,19 +383,19 @@ class _Sidebar(lumen.schema.JSONSchema):
 
     @override
     def _string_type(self, schema: Mapping[str, object]) -> _WidgetType[type]:
+        kwargs = _kwargs(schema)
         match schema:
             case {"format": "date-time"}:
-                return pmui.DatetimePicker, {}
+                return pmui.DatetimePicker, kwargs
             case {"format": "date"}:
-                return pmui.DatePicker, {}
+                return pmui.DatePicker, kwargs
             case {"format": "time"}:
-                return pmui.TimePicker, {"clock": "24h"}
+                kwargs["clock"] = "24h"
+                return pmui.TimePicker, kwargs
             case _:
-                kwargs: dict[str, object] = {"size": "small"}
+                kwargs["size"] = "small"
                 if max_length := schema.get("maxLength"):
                     kwargs["max_length"] = max_length
-                if placeholder := _summary(schema):
-                    kwargs["placeholder"] = placeholder
                 return pmui.TextInput, kwargs
 
     @override
@@ -412,22 +418,24 @@ class _Sidebar(lumen.schema.JSONSchema):
                         wtype, kwargs = self._object_type(schema)
                         break
                 else:
-                    if (
-                        "placeholder" in wtype.param
-                        and (placeholder := _summary(schema))
-                    ):
-                        kwargs["placeholder"] = placeholder
+                    if "helper_text" in wtype.param:
+                        kwargs |= _kwargs(schema)
             case _:
                 wtype, kwargs = self._object_type(schema)
         kwargs["sizing_mode"] = "stretch_width"
         return wtype, kwargs
 
 
+def _helper_text(schema: Mapping[str, Any]) -> str | None:
+    return (desc := schema.get("description")) and inspect.cleandoc(desc)
+
+
+def _kwargs(schema: Mapping[str, object]) -> dict[str, object]:
+    return {
+        "helper_text": helper_text,
+        "sx": {"white-space": "pre-wrap"},
+    } if (helper_text := _helper_text(schema)) else {}
+
+
 def _match(x: "Artist") -> bool:
     return isinstance(x, _PREFER_PNG)
-
-
-def _summary(schema: Mapping[str, Any]) -> str:
-    if description := schema.get("description"):
-        return _base.summary(inspect.cleandoc(description))
-    return ""
