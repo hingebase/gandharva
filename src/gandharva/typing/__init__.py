@@ -17,7 +17,6 @@
 __all__ = [
     "APIRouteParameters",
     "APIRouterParameters",
-    "BasicTemplateParameters",
     "ButtonParameters",
     "DataFrameParameters",
     "Dataset",
@@ -25,6 +24,7 @@ __all__ = [
     "HTMLParameters",
     "JSONSchemaParameters",
     "MarkdownParameters",
+    "PageParameters",
 ]
 
 from ._fastapi import (
@@ -33,11 +33,11 @@ from ._fastapi import (
     FastAPIParameters,
 )
 from ._panel import (
-    BasicTemplateParameters,
     ButtonParameters,
     DataFrameParameters,
     HTMLParameters,
     JSONSchemaParameters,
     MarkdownParameters,
+    PageParameters,
 )
 from ._xarray import Dataset

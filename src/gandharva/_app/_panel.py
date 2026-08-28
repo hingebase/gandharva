@@ -16,7 +16,6 @@ __all__ = ["App"]
 
 import asyncio
 import contextlib
-import functools
 import inspect
 import math
 from collections.abc import Callable, Iterable, Mapping
@@ -25,7 +24,6 @@ from typing import TYPE_CHECKING, cast
 import lumen.schema  # pyright: ignore[reportMissingTypeStubs]
 import panel as pn
 import panel_material_ui as pmui
-import param
 import pydantic
 from bokeh.server.contexts import BokehSessionContext
 from hypothesis_jsonschema import _resolve  # ruff: ignore[import-private-name]
@@ -37,14 +35,20 @@ from gandharva import _convert
 from . import _base, _pydantic
 
 if TYPE_CHECKING:
+    from _typeshed import StrPath
     from panel.io.application import TViewable
-    from panel.layout import ListLike
     from panel.viewable import Viewable
-    from panel.widgets import WidgetBase
     from tornado.httputil import HTTPServerRequest
 
 _NINF = -math.inf
-_T = TypeVar("_T", default=type["WidgetBase"])
+_Panels = dict[
+    str,
+    "Viewable | pn.viewable.Viewer | Callable[[], TViewable] | StrPath",
+    # i.e. TViewableFuncOrPath but not BaseTemplate
+    # See https://github.com/holoviz/panel/issues/2476
+]
+_T = TypeVar("_T", default=type[pn.widgets.WidgetBase])
+_Widgets = Iterable[tuple[str, pn.widgets.WidgetBase]]
 _WidgetType = tuple[_T, dict[str, object]]
 
 
@@ -73,22 +77,16 @@ class App(_pydantic.App):
         return {}
 
     @classmethod
-    def panel_template_class(cls) -> type[pn.template.base.BasicTemplate]:
-        return _MaterialTemplate
-
-    @classmethod
-    def panel_template_params(cls) -> gd.typing.BasicTemplateParameters:
+    def panel_page_params(cls) -> gd.typing.PageParameters:
         title = _base.normalize(cls.__name__).replace("-", " ")
         return {"sidebar_width": 500, "title": title[:1].upper() + title[1:]}
 
     @classmethod
-    def __panel__(cls) -> "TViewable":
+    def __panel__(cls) -> pmui.Page:
         async def main(clicked: bool) -> "Viewable":  # ruff: ignore[boolean-type-hint-positional-argument]
             loop = asyncio.get_running_loop()
-            func = functools.partial(
-                cls._panel_main, loop, model, widgets, clicked=clicked)
             result, stack = await asyncio.to_thread(
-                cls._panel_update, func, submit, indicator)
+                cls._panel_update, submit, page, loop, args, clicked=clicked)
             if task := asyncio.current_task(loop):
                 task.add_done_callback(
                     lambda task: task.get_loop().call_later(1, stack.close))
@@ -102,26 +100,26 @@ class App(_pydantic.App):
             # https://github.com/pydantic/pydantic/issues/12023
             _resolve.resolve_all_refs(model.model_json_schema())["properties"],  # pyright: ignore[reportArgumentType, reportUnknownMemberType]
         )
-        kwargs = dict(cls.panel_button_params(), on_click=None)
-        submit = pmui.Button(**kwargs)
+        args = (model, widgets)
+        submit = pmui.Button(**dict(cls.panel_button_params(), on_click=None))
         sidebar.append(
-            pn.Row(
+            pmui.Row(
                 pn.Spacer(sizing_mode="stretch_width"),
                 submit,
                 pn.Spacer(sizing_mode="stretch_width"),
             ),
         )
-        template = cls._panel_template(sidebar)
-        indicator = template.busy_indicator
-        cast("ListLike", template.main).append(pn.bind(main, submit))
-        return template
+        kwargs = dict(
+            cls.panel_page_params(),
+            main=[pn.bind(main, submit)],
+            sidebar=sidebar,
+        )
+        page = pmui.Page(**kwargs)
+        return page
 
     @classmethod
     @final
-    def to_panels(cls, prefix: str = "") -> dict[
-        str,
-        Callable[[], "TViewable"],  # See https://github.com/holoviz/panel/issues/2476
-    ]:
+    def to_panels(cls, prefix: str = "") -> _Panels:
         # https://github.com/fastapi/fastapi/blob/0.136.1/fastapi/routing.py#L1288-L1292
         if prefix:
             if not prefix.startswith("/"):
@@ -134,7 +132,7 @@ class App(_pydantic.App):
                 )
                 raise ValueError(message)
 
-        panels = {prefix or "/": cls.__panel__}
+        panels: _Panels = {prefix or "/": cls.__panel__}
         prefix += "/"
         for child in cls.children:
             panels |= child.to_panels(prefix + child.app_normalized_name())
@@ -145,7 +143,7 @@ class App(_pydantic.App):
         cls,
         loop: asyncio.AbstractEventLoop,
         model: type[pydantic.BaseModel],
-        widgets: Iterable["tuple[str, WidgetBase]"],
+        widgets: _Widgets,
         *,
         clicked: bool = False,
     ) -> "Viewable":
@@ -188,52 +186,21 @@ class App(_pydantic.App):
     @classmethod
     def _panel_update(
         cls,
-        callback: Callable[[], "Viewable"],
         submit: pmui.Button,
-        indicator: pn.widgets.indicators.BooleanIndicator | None = None,
+        page: pmui.Page,
+        loop: asyncio.AbstractEventLoop,
+        args: tuple[type[pydantic.BaseModel], _Widgets],
+        *,
+        clicked: bool = False,
     ) -> tuple["Viewable", contextlib.ExitStack]:
         with contextlib.ExitStack() as stack:
             stack.enter_context(submit.param.update(disabled=True))
-            if indicator:
-                stack.enter_context(
-                    indicator.param.update(value=True, visible=True),
-                )
+            stack.enter_context(page.param.update(busy=True))
             try:
-                result = callback()
+                result = cls._panel_main(loop, *args, clicked=clicked)
             except Exception as e:  # ruff: ignore[blind-except]
                 result = _convert.gui_error_handler(e)
             return result, stack.pop_all()
-
-    @classmethod
-    def _panel_template(
-        cls,
-        sidebar: "ListLike",
-    ) -> pn.template.base.BasicTemplate:
-        template = cls.panel_template_class()
-        if issubclass(
-            template,
-            (
-                pn.template.EditableTemplate,
-                pn.template.FastGridTemplate,
-                pn.template.FastListTemplate,
-                pn.template.GoldenTemplate,
-                pn.template.ReactTemplate,
-                pn.template.SlidesTemplate,
-            ),
-        ):
-            message = f"Unsupported template: {template}"
-            raise gd.ApplicationBuilderError(message)
-        return template(**dict(cls.panel_template_params(), sidebar=sidebar))
-
-
-class _MaterialTemplate(pn.template.MaterialTemplate):
-    busy_indicator = param.ClassSelector(
-        default=pn.widgets.LoadingSpinner(visible=False, width=20, height=20),
-        class_=pn.widgets.indicators.BooleanIndicator,
-        constant=True,
-        allow_None=True,
-        doc="Visual indicator of application busy state.",
-    )
 
 
 class _Sidebar(lumen.schema.JSONSchema):
@@ -242,7 +209,7 @@ class _Sidebar(lumen.schema.JSONSchema):
         cls,
         kwargs: gd.typing.JSONSchemaParameters,
         schema: dict[str, pydantic.JsonValue],
-    ) -> tuple["ListLike", "Iterable[tuple[str, WidgetBase]]"]:
+    ) -> tuple[list["Viewable"], _Widgets]:
         object_: dict[str, object] = {}
         for k, v in schema.items():
             match v:
@@ -253,9 +220,7 @@ class _Sidebar(lumen.schema.JSONSchema):
                 case _:
                     pass
         self = cls(**dict(kwargs, multi=False, object=object_, schema=schema))
-        sidebar = cast("ListLike", self.layout)
-        widgets = cast("dict[str, WidgetBase]", self._widgets).items()
-        return sidebar, widgets
+        return self.layout.objects, self._widgets.items()  # pyright: ignore[reportUnknownMemberType, reportUnknownVariableType]
 
     @override
     def _array_type(self, schema: Mapping[str, Any]) -> _WidgetType:
