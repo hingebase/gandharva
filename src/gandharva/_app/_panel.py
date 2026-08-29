@@ -114,6 +114,8 @@ class App(_pydantic.App):
             main=[pn.bind(main, submit)],
             sidebar=sidebar,
         )
+        # main() can be invoked during page initialization
+        page = None
         page = pmui.Page(**kwargs)
         return page
 
@@ -187,7 +189,7 @@ class App(_pydantic.App):
     def _panel_update(
         cls,
         submit: pmui.Button,
-        page: pmui.Page,
+        page: pmui.Page | None,
         loop: asyncio.AbstractEventLoop,
         args: tuple[type[pydantic.BaseModel], _Widgets],
         *,
@@ -195,7 +197,8 @@ class App(_pydantic.App):
     ) -> tuple["Viewable", contextlib.ExitStack]:
         with contextlib.ExitStack() as stack:
             stack.enter_context(submit.param.update(disabled=True))
-            stack.enter_context(page.param.update(busy=True))
+            if page:
+                stack.enter_context(page.param.update(busy=True))
             try:
                 result = cls._panel_main(loop, *args, clicked=clicked)
             except Exception as e:  # ruff: ignore[blind-except]
