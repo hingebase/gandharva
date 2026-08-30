@@ -13,17 +13,19 @@
 # permissions and limitations under the License.
 
 __all__ = [
-    "BasicTemplateParameters",
     "ButtonParameters",
     "DataFrameParameters",
     "HTMLParameters",
     "JSONSchemaParameters",
     "MarkdownParameters",
+    "PageParameters",
 ]
 
+import pathlib
 from collections.abc import Callable, Hashable
 from typing import TYPE_CHECKING, Generic, Literal
 
+import jinja2
 import panel as pn
 from typing_extensions import Any, Never, TypedDict, TypeVar
 
@@ -34,9 +36,7 @@ if TYPE_CHECKING:
     from panel.config import (
         _base_config,  # pyright: ignore[reportPrivateUsage]
     )
-    from panel.io.notifications import NotificationAreaBase
-    from panel.layout import ListLike
-    from panel.theme import Design, Theme
+    from panel_material_ui.template.base import Meta
 
 _DataFrameAlign = Literal["start", "end", "center"] | None
 _Formatter = Callable[[object], str]
@@ -76,8 +76,8 @@ class _Layoutable(TypedDict, extra_items=Any, total=False):
     width_policy: _Policy
 
 
-class _PaneBase(_Layoutable, Generic[_T], total=False):
-    default_layout: type[_T]
+class _PaneBase(_Layoutable, total=False):
+    default_layout: Never
     object: Never
 
 
@@ -89,50 +89,66 @@ class _HTMLBasePane(_PaneBase, _Viewable, total=False):
     enable_streaming: Never
 
 
+class _MaterialComponent(_Viewable, Generic[_T], total=False):
+    dark_theme: _T
+    sx: dict[str, str]
+    theme_config: dict[str, Any]
+    use_shadow_dom: bool
+
+
+class _Logo(TypedDict, closed=True):
+    dark: str | pathlib.Path
+    light: str | pathlib.Path
+
+
 class _WidgetSpec(TypedDict, extra_items=Any, total=False):
     type: _Widget
 
 
-class BasicTemplateParameters(TypedDict, extra_items=Any, total=False):
-    base_target: Literal["_blank", "_self", "_parent", "_top"]
-    base_url: str
-    busy_indicator: pn.widgets.indicators.BooleanIndicator | None
-    collapsed_sidebar: Never
+class PageParameters(_MaterialComponent[bool], total=False):
+    app_bar_width: int | str | dict[str, int | str] | None
+    busy: Never
+    busy_indicator: Literal["circular", "linear"] | None
     config: "_base_config"
-    design: type["Design"]
-    favicon: str | None
-    header: "ListLike | None"
-    header_background: str
-    header_color: str
-    location: bool
-    logo: str
-    main: "ListLike | None"
-    main_max_width: str
-    manifest: str | None
-    meta_author: str
-    meta_description: str
-    meta_keywords: str
-    meta_refresh: str
+    contextbar: Never
+    contextbar_open: bool
+    contextbar_resizable: bool
+    contextbar_variant: Literal["persistent", "temporary", "permanent", "auto"]
+    contextbar_width: int
+    favicon: str | pathlib.Path
+    header: list[pn.viewable.Viewable]
+    logo: str | pathlib.Path | _Logo
+    main: Never
+    main_width: int | str | dict[str, int | str] | None
+    meta: "Meta | None"
+    meta_apple_touch_icon: str | None
+    meta_author: str | None
+    meta_description: str | None
+    meta_icon: str | None
+    meta_keywords: str | None
+    meta_name: str
+    meta_refresh: str | None
+    meta_title: str | None
     meta_viewport: str
-    modal: "ListLike | None"
-    name: str | None
-    notifications: "NotificationAreaBase | None"
     sidebar: Never
+    sidebar_open: bool
+    sidebar_resizable: bool
+    sidebar_variant: Literal["persistent", "temporary", "permanent", "auto"]
     sidebar_width: int
-    site: str
     site_url: str
-    theme: type["Theme"]
+    template: str | pathlib.Path | jinja2.Template
+    theme: Literal["dark"]
+    theme_toggle: bool
     title: str
-    _actions: Never
+    _custom_theme: Never
 
 
-class ButtonParameters(_Viewable, total=False):
+class ButtonParameters(_MaterialComponent, total=False):
     attached: Never
     button_style: Never
     button_type: Never
     clicks: Never
     color: Literal["default", "primary", "success", "info", "light", "danger"]
-    dark_theme: Never
     description: "str | Tooltip | pn.widgets.TooltipIcon | None"
     description_delay: int
     disabled: Never
@@ -141,11 +157,9 @@ class ButtonParameters(_Viewable, total=False):
     href: Never
     icon: str | None
     icon_size: str
+    label: str
     size: Literal["small", "medium", "large"]
-    sx: dict[str, str]
     target: Never
-    theme_config: Never
-    use_shadow_dom: Never
     value: Never
     variant: Literal["contained", "outlined", "text"]
 
@@ -191,7 +205,7 @@ class HTMLParameters(_HTMLBasePane, total=False):
     sanitize_html: Never
 
 
-class JSONSchemaParameters(_PaneBase[pn.layout.ListPanel], total=False):
+class JSONSchemaParameters(_PaneBase, total=False):
     multi: Never
     properties: Never
     schema: Never

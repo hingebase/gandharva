@@ -58,6 +58,16 @@ def test_basedpyright(monkeypatch: pytest.MonkeyPatch) -> None:
 
 
 @pytest.mark.skipif(
+    os.getenv("PIXI_PROJECT_NAME") != "gandharva",
+    reason="It's unnecessary to run `pip check` with pure-PyPI dependencies",
+)
+def test_conda_pypi_interoperability() -> None:
+    """The Conda packages should have compatible PyPI dependencies."""
+    args = ["uv", "pip", "check", "--python", sys.executable]
+    subprocess.run(args, check=True)  # ruff: ignore[subprocess-without-shell-equals-true]
+
+
+@pytest.mark.skipif(
     os.getenv("PIXI_PROJECT_NAME") == "gandharva"
         and os.getenv("PIXI_ENVIRONMENT_NAME", "default") != "default",
     reason="It's unnecessary to run Ruff for each Python environment",

@@ -113,16 +113,16 @@ class _App2(gd.Gandharva):
 
 
 def _assert_submit_button(row: pn.viewable.Viewable) -> None:
-    assert isinstance(row, pn.Row)
+    assert isinstance(row, pmui.Row)
     space1, button, space2 = row
     assert isinstance(button, pmui.Button)
     assert isinstance(space1, pn.Spacer)
     assert isinstance(space2, pn.Spacer)
 
 
-def _sidebar(app: type[gd.Gandharva]) -> pn.Column:
-    template = pn.panel(app)  # pyright: ignore[reportUnknownMemberType]
-    assert isinstance(template, pn.template.MaterialTemplate)
-    sidebar = template.sidebar
-    assert isinstance(sidebar, pn.Column)
-    return sidebar
+def _sidebar(app: type[gd.Gandharva]) -> list[pn.viewable.Viewable]:
+    page = pn.panel(app)  # pyright: ignore[reportUnknownMemberType]
+    assert isinstance(page, pmui.Page)
+    sidebar = page.sidebar  # pyright: ignore[reportUnknownMemberType, reportUnknownVariableType]
+    assert isinstance(sidebar, list)
+    return sidebar  # pyright: ignore[reportUnknownVariableType]

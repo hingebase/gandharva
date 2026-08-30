@@ -16,7 +16,7 @@ requires-pixi = ">=0.71.0"
 [package.build.backend]
 name = "pixi-build-python"
 version = ">=0.6.0,<0.9.0"
-channels = ["https://prefix.dev/pixi-build-backends", "conda-forge"]
+channels = ["https://prefix.dev/hingebase/catalina-backports"]
 
 [package.build.config]
 ignore-pypi-mapping = true
@@ -44,12 +44,17 @@ typing-extensions = ">=4.15.0,<5.0.0"
 universal-pathlib = ">=0.3.10,<2.0.0"
 zarr = ">=2.18.3,<4.0.0"
 
+[package.run-constraints]
+azure-identity = ">=1.25.2"  # Python 3.14 support
+# Broken wheels
+pycairo = "<=1.26.1"
+pygobject = "<=3.48.2"
+
 [target]
 linux-64 = { dependencies = { libblas = { build = "*_mkl" } } }
 linux-aarch64 = { dependencies = { libblas = { build = "*_openblas" } } }
 # https://conda-forge.org/news/2025/07/31/new-accelerate-macos/
-osx-64 = { dependencies = { libblas = { build = "*accelerate" } } }
-osx-arm64 = { dependencies = { libblas = { build = "*accelerate" } } }
+osx = { dependencies = { libblas = { build = "*accelerate" } } }
 win-64 = { dependencies = { libblas = { build = "*_mkl" } } }
 
 [dependencies]
@@ -64,6 +69,7 @@ hvsampledata = ">=0.1.5"
 metpy = ">=1.7.0,<2.0.0"
 pandas-stubs = ">=1.4.2,<4.0.0"
 pytest = ">=9.1.1"
+uv = ">=0.10.2"
 uvicorn = ">=0.38.0"
 
 [environments]
