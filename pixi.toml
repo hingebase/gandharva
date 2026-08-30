@@ -42,6 +42,12 @@ typing-extensions = ">=4.15.0,<5.0.0"
 universal-pathlib = ">=0.3.10,<2.0.0"
 zarr = ">=2.18.3,<4.0.0"
 
+[package.run-constraints]
+azure-identity = ">=1.25.2"  # Python 3.14 support
+# Broken wheels
+pycairo = "<=1.26.1"
+pygobject = "<=3.48.2"
+
 [target]
 linux-64 = { dependencies = { libblas = { build = "*_mkl" } } }
 linux-aarch64 = { dependencies = { libblas = { build = "*_openblas" } } }
