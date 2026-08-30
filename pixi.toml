@@ -16,7 +16,7 @@ requires-pixi = ">=0.71.0"
 [package.build.backend]
 name = "pixi-build-python"
 version = ">=0.6.0,<0.9.0"
-channels = ["https://prefix.dev/pixi-build-backends", "conda-forge"]
+channels = ["https://prefix.dev/hingebase/catalina-backports"]
 
 [package.build.config]
 ignore-pypi-mapping = true
@@ -46,8 +46,7 @@ zarr = ">=2.18.3,<4.0.0"
 linux-64 = { dependencies = { libblas = { build = "*_mkl" } } }
 linux-aarch64 = { dependencies = { libblas = { build = "*_openblas" } } }
 # https://conda-forge.org/news/2025/07/31/new-accelerate-macos/
-osx-64 = { dependencies = { libblas = { build = "*accelerate" } } }
-osx-arm64 = { dependencies = { libblas = { build = "*accelerate" } } }
+osx = { dependencies = { libblas = { build = "*accelerate" } } }
 win-64 = { dependencies = { libblas = { build = "*_mkl" } } }
 
 [dependencies]
@@ -60,6 +59,7 @@ httpx2 = ">=2.2.0"
 metpy = ">=1.7.0,<2.0.0"
 pandas-stubs = ">=1.4.2,<4.0.0"
 pytest = ">=9.1.1"
+uv = ">=0.10.2"
 uvicorn = ">=0.38.0"
 
 [environments]
