@@ -111,7 +111,7 @@ class PageParameters(_MaterialComponent[bool], total=False):
     busy_indicator: Literal["circular", "linear"] | None
     config: "_base_config"
     contextbar: Never
-    contextbar_open: bool
+    contextbar_open: Never
     contextbar_resizable: bool
     contextbar_variant: Literal["persistent", "temporary", "permanent", "auto"]
     contextbar_width: int

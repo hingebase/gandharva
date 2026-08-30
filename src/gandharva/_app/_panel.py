@@ -35,7 +35,7 @@ from matplotlib.collections import (
 from matplotlib.image import (
     _ImageBase,  # pyright: ignore[reportPrivateUsage]  # ruff: ignore[import-private-name]
 )
-from typing_extensions import Any, TypeVar, final, override
+from typing_extensions import Any, TypeVar, Unpack, final, override
 
 import gandharva as gd
 from gandharva import _convert
@@ -102,7 +102,12 @@ class App(_pydantic.App):
     @classmethod
     def panel_page_params(cls) -> gd.typing.PageParameters:
         title = _base.normalize(cls.__name__).replace("-", " ")
-        return {"sidebar_width": 500, "title": title[:1].upper() + title[1:]}
+        return {
+            "contextbar_variant": "auto",
+            "contextbar_width": 410,
+            "sidebar_width": 500,
+            "title": title[:1].upper() + title[1:],
+        }
 
     @classmethod
     def __panel__(cls) -> pmui.Page:
@@ -124,7 +129,6 @@ class App(_pydantic.App):
             # https://github.com/pydantic/pydantic/issues/12023
             _resolve.resolve_all_refs(model.model_json_schema())["properties"],  # pyright: ignore[reportArgumentType, reportUnknownMemberType]
         )
-        args = (model, widgets)
         submit = pmui.Button(**dict(cls.panel_button_params(), on_click=None))
         sidebar.append(
             pmui.Row(
@@ -133,8 +137,13 @@ class App(_pydantic.App):
                 pn.Spacer(sizing_mode="stretch_width"),
             ),
         )
+        contextbar = pn.rx([])
+        contextbar_open = pn.rx(obj=False)
+        args = (model, widgets, contextbar, contextbar_open)
         kwargs = dict(
             cls.panel_page_params(),
+            contextbar=contextbar,
+            contextbar_open=contextbar_open,
             main=[pn.bind(main, submit)],
             sidebar=sidebar,
         )
@@ -170,7 +179,7 @@ class App(_pydantic.App):
         loop: asyncio.AbstractEventLoop,
         model: type[pydantic.BaseModel],
         widgets: _Widgets,
-        *,
+        *args: Unpack[tuple[pn.rx, pn.rx]],
         clicked: bool = False,
     ) -> "Viewable":
         if not clicked:
@@ -207,7 +216,7 @@ class App(_pydantic.App):
                     self.panel_request = cast("HTTPServerRequest", request)
             with self.from_pydantic(data):
                 result = self.main()
-        return _convert.to_panel(result, cls)
+        return _convert.to_panel(result, cls, *args)
 
     @classmethod
     def _panel_update(
@@ -215,7 +224,7 @@ class App(_pydantic.App):
         submit: pmui.Button,
         page: pmui.Page | None,
         loop: asyncio.AbstractEventLoop,
-        args: tuple[type[pydantic.BaseModel], _Widgets],
+        args: tuple[type[pydantic.BaseModel], _Widgets, pn.rx, pn.rx],
         *,
         clicked: bool = False,
     ) -> tuple["Viewable", contextlib.ExitStack]:
@@ -226,6 +235,7 @@ class App(_pydantic.App):
             try:
                 result = cls._panel_main(loop, *args, clicked=clicked)
             except Exception as e:  # ruff: ignore[blind-except]
+                _convert.reset_contextbar(args[2], args[3])
                 result = _convert.gui_error_handler(e)
             return result, stack.pop_all()
 
