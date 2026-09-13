@@ -14,16 +14,37 @@
 
 __all__ = ["to_response", "to_response_model"]
 
+import contextlib
 import functools
+import io
+import pathlib
+import sys
+import tempfile
+from typing import TYPE_CHECKING, cast
 
 import fastapi
+import holoviews as hv  # pyright: ignore[reportMissingTypeStubs]
+import matplotlib as mpl
+import matplotlib.figure as mfigure
+import matplotlib.pyplot as plt
+import panel as pn
 import pydantic
-from typing_extensions import Any
+from matplotlib import animation
+from typing_extensions import Any, TypeAliasType
 from typing_inspection import introspection
+
+from gandharva import _utils
+
+if TYPE_CHECKING:
+    import gandharva as gd
+
+Gandharva = TypeAliasType("Gandharva", "gd.Gandharva")
+_HoloViz = pn.viewable.Viewable | hv.core.Dimensioned
 
 
 @functools.singledispatch
-def to_response(value: object) -> object:
+def to_response(value: object, app: Gandharva) -> object:
+    del app
     return {"code": 0, "message": "OK", "data": value}
 
 
@@ -61,9 +82,81 @@ def _to_responses(
     ann: introspection.InspectedAnnotation,
     responses: dict[int | str, dict[str, Any]],
 ) -> None:
-    pass
+    tp = ann.type
+    if _utils.isclass(tp):
+        if issubclass(tp, animation.TimedAnimation):
+            responses[200] = {"content": {"video/mp4": {}}}
+        elif issubclass(tp, mfigure.Figure):
+            match mpl.rcParams["savefig.format"]:
+                case "png":
+                    responses[200] = {"content": {"image/png": {}}}
+                case "svg":
+                    responses[200] = {"content": {"image/svg+xml": {}}}
+                case _:
+                    raise NotImplementedError
+        elif issubclass(tp, _HoloViz):
+            if sys.version_info >= (3, 12):
+                responses[200] = {"content": {"text/html": {}}}
+            else:
+                match mpl.rcParams["savefig.format"]:
+                    case "png":
+                        responses[200] = {
+                            "content": {"image/png": {}, "video/mp4": {}},
+                        }
+                    case "svg":
+                        responses[200] = {
+                            "content": {"image/svg+xml": {}, "video/mp4": {}},
+                        }
+                    case _:
+                        raise NotImplementedError
 
 
 @to_response.register
-def _(value: fastapi.Response) -> fastapi.Response:
+def _(value: fastapi.Response, app: Gandharva) -> fastapi.Response:
+    del app
     return value
+
+
+if sys.version_info >= (3, 12):
+    @to_response.register
+    def _(value: pn.viewable.Viewable, app: Gandharva) -> fastapi.Response:
+        raise NotImplementedError
+
+    @to_response.register
+    def _(value: hv.core.Dimensioned, app: Gandharva) -> fastapi.Response:
+        raise NotImplementedError
+else:
+    @to_response.register
+    def _(value: pn.viewable.Viewable, app: Gandharva) -> fastapi.Response:
+        [pane] = value.select(pn.pane.HoloViews)
+        return to_response(cast("pn.pane.HoloViews", pane).object, app)
+
+    @to_response.register
+    def _(value: hv.core.Dimensioned, app: Gandharva) -> fastapi.Response:
+        return to_response(app.to_matplotlib(value), app)
+
+
+@to_response.register
+def _(value: animation.TimedAnimation, app: Gandharva) -> fastapi.Response:
+    del app
+    with tempfile.TemporaryDirectory(ignore_cleanup_errors=True) as tmp:
+        p = pathlib.Path(tmp, "plot.mp4")
+        value.save(p, writer="ffmpeg", codec="h264_mf")
+        return fastapi.Response(p.read_bytes(), media_type="video/mp4")
+
+
+@to_response.register
+def _(value: mfigure.Figure, app: Gandharva) -> fastapi.Response:
+    del app
+    with contextlib.ExitStack() as stack:
+        stack.callback(plt.close, value)
+        match fmt := mpl.rcParams["savefig.format"]:
+            case "png":
+                media_type = "image/png"
+            case "svg":
+                media_type = "image/svg+xml"
+            case _:
+                raise NotImplementedError
+        f = stack.enter_context(io.BytesIO())
+        value.savefig(f, format=fmt)  # pyright: ignore[reportUnknownMemberType]
+        return fastapi.Response(f.getvalue(), media_type=media_type)

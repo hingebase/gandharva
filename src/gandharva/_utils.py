@@ -12,11 +12,22 @@
 # implied. See the License for the specific language governing
 # permissions and limitations under the License.
 
-__all__ = ["undisplayable_info"]
+__all__ = ["isclass", "undisplayable_info"]
+
+import sys
+import types
 
 import holoviews as hv  # pyright: ignore[reportMissingTypeStubs]
 import param
 from holoviews.plotting import util  # pyright: ignore[reportMissingTypeStubs]
+
+if sys.version_info >= (3, 11):
+    from inspect import isclass
+else:
+    from typing_extensions import TypeIs
+
+    def isclass(x: object, /) -> TypeIs[type[object]]:
+        return not isinstance(x, types.GenericAlias) and isinstance(x, type)
 
 
 def undisplayable_info(obj: hv.core.Dimensioned, *, html: bool = False) -> str:

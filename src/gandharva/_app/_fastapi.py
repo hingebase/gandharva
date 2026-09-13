@@ -98,7 +98,7 @@ class App(_pydantic.App):
     def _fastapi_main(self) -> object:
         try:
             result = self.main()
-            result = _convert.to_response(result)
+            result = _convert.to_response(result, self)
         except Exception as e:  # ruff: ignore[blind-except]
             return {"code": 1, "message": str(e), "data": None}
         return result
