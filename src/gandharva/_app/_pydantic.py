@@ -23,6 +23,7 @@ import sys
 from collections.abc import Callable, Generator, Mapping, Sequence
 from typing import TYPE_CHECKING, Annotated, ClassVar, cast, get_origin
 
+import hvplot  # pyright: ignore[reportMissingTypeStubs]
 import pydantic.alias_generators
 import pydantic_settings
 import rich.markdown
@@ -196,8 +197,9 @@ class App(_base.App):
             return
         self = cls(run_mode="cli")
         with self.from_pydantic(model):
+            hvplot.extension("matplotlib")
             result = self.main()
-        _convert.to_cli(result, json=model.json_)
+        _convert.to_cli(result, cast("gd.Gandharva", self), json=model.json_)
 
     @classmethod
     def _pydantic_cli_extra_sources(

@@ -24,6 +24,7 @@ __all__ = [
     "HTMLParameters",
     "JSONSchemaParameters",
     "MarkdownParameters",
+    "MatplotlibParameters",
     "PageParameters",
 ]
 
@@ -38,6 +39,7 @@ from ._panel import (
     HTMLParameters,
     JSONSchemaParameters,
     MarkdownParameters,
+    MatplotlibParameters,
     PageParameters,
 )
 from ._xarray import Dataset

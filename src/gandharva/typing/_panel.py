@@ -111,7 +111,7 @@ class PageParameters(_MaterialComponent[bool], total=False):
     busy_indicator: Literal["circular", "linear"] | None
     config: "_base_config"
     contextbar: Never
-    contextbar_open: bool
+    contextbar_open: Never
     contextbar_resizable: bool
     contextbar_variant: Literal["persistent", "temporary", "permanent", "auto"]
     contextbar_width: int
@@ -221,3 +221,18 @@ class MarkdownParameters(_HTMLBasePane, total=False):
     plugins: list["Callable[[MarkdownIt], None]"]
     renderer: Literal["markdown-it", "myst", "markdown"]
     renderer_options: dict[str, Any]
+
+
+class MatplotlibParameters(_HTMLBasePane, total=False):
+    alt_text: str | None
+    caption: str | None
+    dpi: int
+    embed: Never
+    encode: bool
+    fixed_aspect: bool
+    format: Literal["png", "svg"]
+    high_dpi: bool
+    interactive: Never
+    link_url: str | None
+    target: str
+    tight: bool
