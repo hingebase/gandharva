@@ -20,7 +20,7 @@ import io
 import pathlib
 import sys
 import tempfile
-from typing import TYPE_CHECKING, cast
+from typing import cast
 
 import fastapi
 import holoviews as hv  # pyright: ignore[reportMissingTypeStubs]
@@ -30,15 +30,12 @@ import matplotlib.pyplot as plt
 import panel as pn
 import pydantic
 from matplotlib import animation
-from typing_extensions import Any, TypeAliasType
+from typing_extensions import Any
 from typing_inspection import introspection
 
 from gandharva import _utils
+from gandharva._typing import Gandharva
 
-if TYPE_CHECKING:
-    import gandharva as gd
-
-Gandharva = TypeAliasType("Gandharva", "gd.Gandharva")
 _HoloViz = pn.viewable.Viewable | hv.core.Dimensioned
 
 
@@ -119,20 +116,20 @@ def _(value: fastapi.Response, app: Gandharva) -> fastapi.Response:
 
 if sys.version_info >= (3, 12):
     @to_response.register
-    def _(value: pn.viewable.Viewable, app: Gandharva) -> fastapi.Response:
+    def _(value: pn.viewable.Viewable, app: Gandharva) -> object:
         raise NotImplementedError
 
     @to_response.register
-    def _(value: hv.core.Dimensioned, app: Gandharva) -> fastapi.Response:
+    def _(value: hv.core.Dimensioned, app: Gandharva) -> object:
         raise NotImplementedError
 else:
     @to_response.register
-    def _(value: pn.viewable.Viewable, app: Gandharva) -> fastapi.Response:
+    def _(value: pn.viewable.Viewable, app: Gandharva) -> object:
         [pane] = value.select(pn.pane.HoloViews)
         return to_response(cast("pn.pane.HoloViews", pane).object, app)
 
     @to_response.register
-    def _(value: hv.core.Dimensioned, app: Gandharva) -> fastapi.Response:
+    def _(value: hv.core.Dimensioned, app: Gandharva) -> object:
         return to_response(app.to_matplotlib(value), app)
 
 

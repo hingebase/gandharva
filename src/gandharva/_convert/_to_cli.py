@@ -33,20 +33,15 @@ import rich
 import textual_image.renderable
 from matplotlib import animation
 from rich.table import Table
-from typing_extensions import TypeAliasType, override
+from typing_extensions import override
 
 from gandharva import testing
+from gandharva._typing import Gandharva
 
 from . import _common
 
 if TYPE_CHECKING:
     from _typeshed import StrPath
-
-    import gandharva as gd
-
-# Prevent `functools.singledispatch` from evaluating the annotation
-# string too early
-Gandharva = TypeAliasType("Gandharva", "gd.Gandharva")
 
 
 def to_cli(value: object, app: Gandharva, *, json: bool = False) -> None:

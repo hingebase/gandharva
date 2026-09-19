@@ -21,7 +21,6 @@ import itertools
 import pathlib
 import tempfile
 import traceback
-from typing import TYPE_CHECKING
 
 import holoviews as hv  # pyright: ignore[reportMissingTypeStubs]
 import matplotlib.figure as mfigure
@@ -33,11 +32,9 @@ from panel.pane import HTML, DataFrame
 from typing_extensions import override
 
 from gandharva import _utils
+from gandharva._typing import Gandharva
 
 from . import _common
-
-if TYPE_CHECKING:
-    import gandharva as gd
 
 _TEMPLATE = '<b>{0.__name__}</b>\n<pre style="overflow-y: auto">{1}</pre>'
 
@@ -60,7 +57,7 @@ def reset_contextbar(contextbar: pn.rx, contextbar_open: pn.rx) -> None:
 @functools.singledispatch
 def to_panel(
     value: object,
-    app: type["gd.Gandharva"],
+    app: type[Gandharva],
     contextbar: pn.rx,
     contextbar_open: pn.rx,
 ) -> pn.viewable.Viewable:
@@ -72,7 +69,7 @@ def to_panel(
 @to_panel.register
 def _(
     value: pn.viewable.Viewable,
-    app: type["gd.Gandharva"],
+    app: type[Gandharva],
     contextbar: pn.rx,
     contextbar_open: pn.rx,
 ) -> pn.viewable.Viewable:
@@ -84,7 +81,7 @@ def _(
 @to_panel.register
 def _(
     value: hv.core.Dimensioned,
-    app: type["gd.Gandharva"],
+    app: type[Gandharva],
     contextbar: pn.rx,
     contextbar_open: pn.rx,
 ) -> pn.viewable.Viewable:
@@ -108,7 +105,7 @@ def _(
 @to_panel.register
 def _(
     value: animation.TimedAnimation,
-    app: type["gd.Gandharva"],
+    app: type[Gandharva],
     contextbar: pn.rx,
     contextbar_open: pn.rx,
 ) -> pn.pane.Video:
@@ -123,7 +120,7 @@ def _(
 @to_panel.register
 def _(
     value: mfigure.Figure,
-    app: type["gd.Gandharva"],
+    app: type[Gandharva],
     contextbar: pn.rx,
     contextbar_open: pn.rx,
 ) -> pn.pane.Matplotlib:
@@ -134,7 +131,7 @@ def _(
 
 @dataclasses.dataclass
 class _RichDisplay(_common.RichDisplay[HTML, DataFrame]):
-    app: type["gd.Gandharva"]
+    app: type[Gandharva]
 
     @override
     def text(self, data: str) -> HTML:
