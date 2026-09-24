@@ -116,7 +116,7 @@ def _(value: mfigure.Figure, app: Gandharva) -> None:
         try:
             value.savefig(f)  # pyright: ignore[reportUnknownMemberType]
         finally:
-            plt.close(value)  # https://github.com/holoviz/holoviews/issues/599
+            plt.close(value)
         sixel = textual_image.renderable.Image(f)
     _to_cli(sixel, app)
 

@@ -24,6 +24,7 @@ import traceback
 
 import holoviews as hv  # pyright: ignore[reportMissingTypeStubs]
 import matplotlib.figure as mfigure
+import matplotlib.pyplot as plt
 import pandas as pd
 import panel as pn
 import pydantic_core
@@ -124,8 +125,11 @@ def _(
     contextbar: pn.rx,
     contextbar_open: pn.rx,
 ) -> pn.pane.Matplotlib:
-    reset_contextbar(contextbar, contextbar_open)
-    kwargs = dict(app.panel_matplotlib_params(value), object=value)
+    try:
+        reset_contextbar(contextbar, contextbar_open)
+        kwargs = dict(app.panel_matplotlib_params(value), object=value)
+    finally:
+        plt.close(value)  # https://panel.holoviz.org/reference/panes/Matplotlib.html#using-the-matplotlib-pyplot-interface
     return pn.pane.Matplotlib(**kwargs)
 
 
