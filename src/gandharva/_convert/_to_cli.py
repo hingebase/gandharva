@@ -91,14 +91,14 @@ def _(value: animation.TimedAnimation, app: Gandharva) -> None:
     ffplay = shutil.which("ffplay", path=_ffplay_path())
     if not ffplay:
         rich.print(  # TODO(): #4
-            "Please install FFmpeg >=4.3 and expose the executables 'ffmpeg', "
+            "Please install FFmpeg and expose the executables 'ffmpeg', "
             "'ffplay' via PATH or "
             "matplotlib.rcParams['animation.ffmpeg_path']",
         )
         sys.exit(1)
     with tempfile.TemporaryDirectory(ignore_cleanup_errors=True) as tmp:
         filename = str(pathlib.Path(tmp, "plot.mp4"))
-        value.save(filename, writer="ffmpeg", codec="h264_mf")
+        value.save(filename, writer="ffmpeg", codec="libopenh264")
         subprocess.run(  # ruff: ignore[subprocess-without-shell-equals-true]
             [
                 ffplay,

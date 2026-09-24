@@ -113,7 +113,7 @@ def _(
     reset_contextbar(contextbar, contextbar_open)
     with tempfile.TemporaryDirectory(ignore_cleanup_errors=True) as tmp:
         p = pathlib.Path(tmp, "plot.mp4")
-        value.save(p, writer="ffmpeg", codec="h264_mf")
+        value.save(p, writer="ffmpeg", codec="libopenh264")
         return pn.pane.Video(object=p.read_bytes())
 
 
