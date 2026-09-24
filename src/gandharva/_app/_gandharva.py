@@ -112,7 +112,6 @@ class Gandharva(_fastapi.App, _panel.App):
         self,
         plot: hv.core.Dimensioned,
         *,
-        dpi: int = 0,
         fps: int = 1,
     ) -> mfigure.Figure | animation.TimedAnimation:
         html = self.run_mode != "cli"
@@ -124,7 +123,7 @@ class Gandharva(_fastapi.App, _panel.App):
                     raise TypeError(info)
                 case "gui":
                     raise NotImplementedError
-        return hv.render(plot, backend="matplotlib", dpi=dpi, fps=fps)  # pyright: ignore[reportUnknownMemberType, reportUnknownVariableType]
+        return hv.render(plot, backend="matplotlib", dpi=0, fps=fps)  # pyright: ignore[reportUnknownMemberType, reportUnknownVariableType]
 
     def to_netcdf(
         self,
