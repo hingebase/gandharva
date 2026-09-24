@@ -12,14 +12,17 @@
 # implied. See the License for the specific language governing
 # permissions and limitations under the License.
 
-__all__ = ["LongTable", "RichDisplay", "WideTable"]
+__all__ = ["LongTable", "RichDisplay", "WideTable", "get_plot"]
 
 import abc
 import itertools
 import json
 from collections.abc import Iterator
-from typing import Generic, TypeGuard
+from typing import Generic, TypeGuard, cast
 
+import holoviews as hv  # pyright: ignore[reportMissingTypeStubs]
+import matplotlib.figure as mfigure
+import panel as pn
 from pydantic import JsonValue
 from typing_extensions import TypeVar
 
@@ -27,6 +30,7 @@ _Atom = str | bool | int | float | None
 LongTable = Iterator[tuple[_Atom, ...]]
 WideTable = list[dict[str, _Atom]]
 
+_PlotTypes = pn.pane.HoloViews | pn.pane.Matplotlib
 _TableT = TypeVar("_TableT")
 _TextT = TypeVar("_TextT")
 
@@ -71,6 +75,11 @@ class RichDisplay(abc.ABC, Generic[_TextT, _TableT]):
         return self.long_table(zip(*keys, values, strict=True))
 
 
+def get_plot(x: pn.viewable.Viewable) -> hv.core.Dimensioned | mfigure.Figure:
+    [pane] = x.select(_selector)
+    return cast("_PlotTypes", pane).object
+
+
 class _EmptyError(Exception):
     pass
 
@@ -105,3 +114,7 @@ def _is_wide_table(data: list[JsonValue]) -> TypeGuard[WideTable]:
             if not isinstance(value, _Atom):
                 return False
     return True
+
+
+def _selector(x: pn.viewable.Viewable) -> bool:
+    return isinstance(x, _PlotTypes)

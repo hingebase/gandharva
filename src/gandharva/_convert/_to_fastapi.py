@@ -20,7 +20,6 @@ import io
 import pathlib
 import sys
 import tempfile
-from typing import cast
 
 import fastapi
 import holoviews as hv  # pyright: ignore[reportMissingTypeStubs]
@@ -35,6 +34,8 @@ from typing_inspection import introspection
 
 from gandharva import _utils
 from gandharva._typing import Gandharva
+
+from . import _common
 
 _HoloViz = pn.viewable.Viewable | hv.core.Dimensioned
 
@@ -125,8 +126,7 @@ if sys.version_info >= (3, 12):
 else:
     @to_response.register
     def _(value: pn.viewable.Viewable, app: Gandharva) -> object:
-        [pane] = value.select(pn.pane.HoloViews)
-        return to_response(cast("pn.pane.HoloViews", pane).object, app)
+        return to_response(_common.get_plot(value), app)
 
     @to_response.register
     def _(value: hv.core.Dimensioned, app: Gandharva) -> object:

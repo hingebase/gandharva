@@ -22,7 +22,7 @@ import shutil
 import subprocess  # ruff: ignore[suspicious-subprocess-import]
 import sys
 import tempfile
-from typing import TYPE_CHECKING, cast
+from typing import TYPE_CHECKING
 
 import holoviews as hv  # pyright: ignore[reportMissingTypeStubs]
 import matplotlib.figure as mfigure
@@ -77,8 +77,7 @@ def _(value: None, app: Gandharva) -> None:
 
 @_to_cli.register
 def _(value: pn.viewable.Viewable, app: Gandharva) -> None:
-    [pane] = value.select(pn.pane.HoloViews)
-    _to_cli(cast("pn.pane.HoloViews", pane).object, app)
+    _to_cli(_common.get_plot(value), app)
 
 
 @_to_cli.register
