@@ -12,12 +12,13 @@
 # implied. See the License for the specific language governing
 # permissions and limitations under the License.
 
-__all__ = ["App"]
+__all__ = ["App", "get_lock"]
 
 import asyncio
 import contextlib
 import inspect
 import math
+import weakref
 from collections.abc import Callable, Iterable, Mapping
 from typing import TYPE_CHECKING, cast
 
@@ -28,6 +29,7 @@ import panel as pn
 import panel_material_ui as pmui
 import pydantic
 from bokeh.server.contexts import BokehSessionContext
+from distributed.scheduler import RLock  # pyright: ignore[reportPrivateImportUsage]
 from hypothesis_jsonschema import _resolve  # ruff: ignore[import-private-name]
 from matplotlib.collections import (
     _MeshData,  # pyright: ignore[reportPrivateUsage]  # ruff: ignore[import-private-name]
@@ -114,6 +116,8 @@ class App(_pydantic.App):
         async def main(clicked: bool) -> "Viewable":  # ruff: ignore[boolean-type-hint-positional-argument]
             mpl.use("agg")  # This takes ~1 μs if the backend is already "agg"
             loop = asyncio.get_running_loop()
+            if loop not in _locks:
+                _locks[loop] = RLock()
             result, stack = await asyncio.to_thread(
                 cls._panel_update, submit, page, loop, args, clicked=clicked)
             if task := asyncio.current_task(loop):
@@ -204,19 +208,19 @@ class App(_pydantic.App):
                     include_input=False,
                 )
             ]
-        else:
-            self = cls(run_mode="gui")
-            self.panel_event_loop = loop
-            if curdoc := pn.state.curdoc:
-                ctx = curdoc.session_context
-                if (
-                    isinstance(ctx, BokehSessionContext)
-                    and (request := ctx.request)
-                ):
-                    self.panel_request = cast("HTTPServerRequest", request)
-            with self.from_pydantic(data):
-                result = self.main()
-        return _convert.to_panel(result, cls, *args)
+            return _convert.to_panel(result, cls, *args)
+        self = cls(run_mode="gui")
+        self.panel_event_loop = loop
+        if curdoc := pn.state.curdoc:
+            ctx = curdoc.session_context
+            if (
+                isinstance(ctx, BokehSessionContext)
+                and (request := ctx.request)
+            ):
+                self.panel_request = cast("HTTPServerRequest", request)
+        with self.from_pydantic(data), self.auto_plotting_backend():
+            result = self.main()
+            return _convert.to_panel(result, cls, *args)
 
     @classmethod
     def _panel_update(
@@ -238,6 +242,10 @@ class App(_pydantic.App):
                 _convert.reset_contextbar(args[2], args[3])
                 result = _convert.gui_error_handler(e)
             return result, stack.pop_all()
+
+
+def get_lock(loop: asyncio.AbstractEventLoop) -> RLock:
+    return _locks[loop]
 
 
 class _Sidebar(lumen.schema.JSONSchema):
@@ -417,3 +425,6 @@ def _kwargs(schema: Mapping[str, object]) -> dict[str, object]:
 
 def _match(x: "Artist") -> bool:
     return isinstance(x, _PREFER_PNG)
+
+
+_locks = weakref.WeakKeyDictionary[asyncio.AbstractEventLoop, RLock]()

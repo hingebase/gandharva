@@ -12,10 +12,12 @@
 # implied. See the License for the specific language governing
 # permissions and limitations under the License.
 
-__all__ = ["Gandharva"]
+__all__ = ["Gandharva", "HoloVizTypes"]
 
 from typing import TYPE_CHECKING
 
+import holoviews as hv  # pyright: ignore[reportMissingTypeStubs]
+import panel as pn
 from typing_extensions import TypeAliasType
 
 if TYPE_CHECKING:
@@ -24,3 +26,5 @@ if TYPE_CHECKING:
 # Prevent `functools.singledispatch` from evaluating the annotation
 # string too early
 Gandharva = TypeAliasType("Gandharva", "gd.Gandharva")
+
+HoloVizTypes = pn.viewable.Viewable | hv.core.Dimensioned

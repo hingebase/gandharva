@@ -29,15 +29,12 @@ import matplotlib.pyplot as plt
 import panel as pn
 import pydantic
 from matplotlib import animation
-from typing_extensions import Any
-from typing_inspection import introspection
+from typing_extensions import Any, TypeForm
 
 from gandharva import _utils
-from gandharva._typing import Gandharva
+from gandharva._typing import Gandharva, HoloVizTypes
 
 from . import _common
-
-_HoloViz = pn.viewable.Viewable | hv.core.Dimensioned
 
 
 @functools.singledispatch
@@ -48,7 +45,7 @@ def to_response(value: object, app: Gandharva) -> object:
 
 def to_response_model(
     model_name: str,
-    data: object,
+    data: TypeForm[Any],
     kwargs: dict[str, Any],
 ) -> None:
     try:
@@ -68,19 +65,14 @@ def to_response_model(
         message=str,
         data=Any,
     )
-    ann = introspection.inspect_annotation(
-        data,
-        annotation_source=introspection.AnnotationSource.BARE,
-        unpack_type_aliases="eager",
-    )
+    ann = _utils.unwrap_annotation(data)
     _to_responses(ann, kwargs["responses"])
 
 
 def _to_responses(
-    ann: introspection.InspectedAnnotation,
+    tp: TypeForm[Any],
     responses: dict[int | str, dict[str, Any]],
 ) -> None:
-    tp = ann.type
     if _utils.isclass(tp):
         if issubclass(tp, animation.TimedAnimation):
             responses[200] = {"content": {"video/mp4": {}}}
@@ -92,7 +84,7 @@ def _to_responses(
                     responses[200] = {"content": {"image/svg+xml": {}}}
                 case _:
                     raise NotImplementedError
-        elif issubclass(tp, _HoloViz):
+        elif issubclass(tp, HoloVizTypes):
             if sys.version_info >= (3, 12):
                 responses[200] = {"content": {"text/html": {}}}
             else:

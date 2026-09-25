@@ -12,13 +12,19 @@
 # implied. See the License for the specific language governing
 # permissions and limitations under the License.
 
-__all__ = ["App"]
+__all__ = ["App", "get_lock"]
 
-import inspect
+import contextlib
+import weakref
 from email.message import Message
 from typing import Annotated, Literal, no_type_check
 
+import anyio.lowlevel
 import fastapi
+import matplotlib as mpl
+import starlette.types
+from anyio.from_thread import threadlocals  # pyright: ignore[reportPrivateImportUsage]
+from distributed.scheduler import RLock  # pyright: ignore[reportPrivateImportUsage]
 from typing_extensions import Any, Self, final, overload
 
 import gandharva as gd
@@ -39,12 +45,20 @@ class App(_pydantic.App):
         }
 
     @classmethod
-    def fastapi_apirouter_params(cls) -> gd.typing.APIRouterParameters:
-        return {}
+    def fastapi_apirouter_params(
+        cls,
+        lifespan: starlette.types.Lifespan[Any],
+    ) -> gd.typing.APIRouterParameters:
+        return {"lifespan": lifespan}
 
     @classmethod
-    def fastapi_app_params(cls, meta: Message) -> gd.typing.FastAPIParameters:
+    def fastapi_app_params(
+        cls,
+        lifespan: starlette.types.Lifespan[fastapi.FastAPI],
+        meta: Message,
+    ) -> gd.typing.FastAPIParameters:
         kwargs: gd.typing.FastAPIParameters = {
+            "lifespan": lifespan,
             "summary": meta.get("Summary"),
         }
         for key in "description", "version":
@@ -70,7 +84,7 @@ class App(_pydantic.App):
     @final
     def to_router(cls) -> fastapi.APIRouter:
         kwargs: dict[str, Any] = dict(
-            cls.fastapi_apirouter_params(),
+            cls.fastapi_apirouter_params(_lifespan),
             prefix="/" + cls.app_normalized_name(),
         )
         router = fastapi.APIRouter(**kwargs)
@@ -91,16 +105,17 @@ class App(_pydantic.App):
         meta = cls.app_distribution_metadata()
         if meta.get("Name", "gandharva") == "gandharva":
             meta = Message()
-        app = fastapi.FastAPI(**cls.fastapi_app_params(meta))
+        app = fastapi.FastAPI(**cls.fastapi_app_params(_lifespan, meta))
         cls._fastapi_routes(app)
         return app
 
     def _fastapi_main(self) -> object:
-        try:
-            result = self.main()
-            result = _convert.to_response(result, self)
-        except Exception as e:  # ruff: ignore[blind-except]
-            return {"code": 1, "message": str(e), "data": None}
+        with self.auto_plotting_backend():
+            try:
+                result = self.main()
+                result = _convert.to_response(result, self)
+            except Exception as e:  # ruff: ignore[blind-except]
+                return {"code": 1, "message": str(e), "data": None}
         return result
 
     @classmethod
@@ -117,7 +132,7 @@ class App(_pydantic.App):
         )
         _convert.to_response_model(
             f"__Response_{cls.__name__}",
-            inspect.signature(cls.main, eval_str=True).return_annotation,
+            cls.main_return_annotation(),
             kwargs,
         )
         model = cls.to_pydantic()
@@ -142,3 +157,20 @@ class App(_pydantic.App):
         for child in cls.children:
             router.include_router(child.to_router())
         cls.fastapi_post_init(router)
+
+
+def get_lock() -> RLock:
+    token: anyio.lowlevel.EventLoopToken = threadlocals.current_token
+    return _locks[token.native_token]
+
+
+def _lifespan(_: fastapi.FastAPI) -> contextlib.nullcontext[None]:
+    mpl.use("agg")
+    token = anyio.lowlevel.current_token().native_token
+    if token not in _locks:
+        _locks[token] = RLock()
+    return _noop
+
+
+_locks = weakref.WeakKeyDictionary[object, RLock]()
+_noop = contextlib.nullcontext()

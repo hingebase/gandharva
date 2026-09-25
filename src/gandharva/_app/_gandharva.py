@@ -15,6 +15,7 @@
 __all__ = ["Gandharva"]
 
 import asyncio
+import contextlib
 import datetime
 import functools
 import getpass
@@ -22,13 +23,15 @@ import inspect
 import ipaddress
 import pathlib
 import sys
-from collections.abc import Callable, Coroutine
-from typing import TYPE_CHECKING, cast
+from collections.abc import Callable, Coroutine, Generator
+from typing import TYPE_CHECKING, Literal, cast
 
 import anyio.from_thread
 import holoviews as hv  # pyright: ignore[reportMissingTypeStubs]
+import hvplot  # pyright: ignore[reportMissingTypeStubs]
 import matplotlib.figure as mfigure
 import pandera.xarray as pa
+import panel as pn
 import xarray as xr
 from matplotlib import animation
 from typing_extensions import Any, ParamSpec, TypeVar, disjoint_base, override
@@ -36,6 +39,7 @@ from upath import UPath
 
 import gandharva as gd
 from gandharva import _convert, _utils
+from gandharva._typing import HoloVizTypes
 
 from . import _base, _fastapi, _panel
 
@@ -54,6 +58,8 @@ if TYPE_CHECKING:
 
 _GandharvaT = TypeVar("_GandharvaT", bound=type["Gandharva"])
 _P = ParamSpec("_P")
+_PlotTypesAPI = mfigure.Figure | animation.TimedAnimation | HoloVizTypes
+_PlotTypesGUI = mfigure.Figure | animation.TimedAnimation | pn.pane.Matplotlib
 _T = TypeVar("_T")
 
 
@@ -82,6 +88,38 @@ class Gandharva(_fastapi.App, _panel.App):
             raise gd.ApplicationRegisterError(message)
         cls.children.append(child)
         return child
+
+    @contextlib.contextmanager
+    def switch_plotting_backend(
+        self,
+        name: Literal["bokeh", "matplotlib", "plotly"],
+    ) -> Generator[None]:
+        match self.run_mode:
+            case "api":
+                lock = _fastapi.get_lock()
+                owner = self.fastapi_request
+            case "cli":
+                if name == "matplotlib":
+                    yield
+                    return
+                message = "Cannot switch plotting backend in CLI mode"
+                raise ValueError(message)
+            case "gui":
+                lock = _panel.get_lock(self.panel_event_loop)
+                owner = self.panel_request
+        self.syncify(lock.acquire)(owner)
+        try:
+            current = hv.Store.current_backend
+            if name == current:
+                yield
+                return
+            hvplot.extension(name)
+            try:
+                yield
+            finally:
+                hvplot.extension(current)
+        finally:
+            lock.release(owner)
 
     def syncify(
         self,
@@ -281,6 +319,36 @@ class Gandharva(_fastapi.App, _panel.App):
 
         See https://docs.unidata.ucar.edu/nug/2.0-draft/nug_conventions.html#title
         """
+
+    if sys.version_info >= (3, 12):
+        @override
+        @contextlib.contextmanager
+        def auto_plotting_backend(self) -> Generator[None]:
+            if self.run_mode != "cli":
+                ann = _utils.unwrap_annotation(self.main_return_annotation())
+                if _utils.isclass(ann) and issubclass(ann, _PlotTypesGUI):
+                    with self.switch_plotting_backend("matplotlib"):
+                        yield
+                        return
+            yield
+    else:
+        @override
+        @contextlib.contextmanager
+        def auto_plotting_backend(self) -> Generator[None]:
+            match self.run_mode:
+                case "api":
+                    plot_types = _PlotTypesAPI
+                case "cli":
+                    yield
+                    return
+                case "gui":
+                    plot_types = _PlotTypesGUI
+            ann = _utils.unwrap_annotation(self.main_return_annotation())
+            if _utils.isclass(ann) and issubclass(ann, plot_types):
+                with self.switch_plotting_backend("matplotlib"):
+                    yield
+                    return
+            yield
 
     def _dataset_postprocessing(
         self,

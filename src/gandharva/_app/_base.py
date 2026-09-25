@@ -15,6 +15,7 @@
 __all__ = ["App", "normalize", "summary"]
 
 import abc
+import contextlib
 import importlib.metadata
 import inspect
 import os
@@ -25,7 +26,7 @@ import packaging.utils
 import platformdirs
 import pydantic.alias_generators
 import upath
-from typing_extensions import final
+from typing_extensions import Any, TypeForm, final
 
 if TYPE_CHECKING:
     import gandharva as gd
@@ -37,6 +38,10 @@ class App(abc.ABC):
 
     @abc.abstractmethod
     def main(self) -> object:
+        raise NotImplementedError
+
+    @abc.abstractmethod
+    def auto_plotting_backend(self) -> contextlib.AbstractContextManager[None]:
         raise NotImplementedError
 
     @abc.abstractmethod
@@ -80,6 +85,12 @@ class App(abc.ABC):
             title = name.replace("-", " ")
             return title[:1].upper() + title[1:]
         return None
+
+    @classmethod
+    def main_return_annotation(cls) -> TypeForm[Any]:
+        main = cls.main
+        main.__signature__ = sig = inspect.signature(main, eval_str=True)
+        return sig.return_annotation
 
     @final
     def __init__(self, run_mode: Literal["api", "cli", "gui"]) -> None:
