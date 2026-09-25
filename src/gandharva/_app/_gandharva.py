@@ -27,6 +27,7 @@ from collections.abc import Callable, Coroutine, Generator
 from typing import TYPE_CHECKING, Literal, cast
 
 import anyio.from_thread
+import fastapi
 import holoviews as hv  # pyright: ignore[reportMissingTypeStubs]
 import hvplot  # pyright: ignore[reportMissingTypeStubs]
 import matplotlib.figure as mfigure
@@ -151,12 +152,13 @@ class Gandharva(_fastapi.App, _panel.App):
         plot: hv.core.Dimensioned,
         *,
         fps: int = 1,
-    ) -> mfigure.Figure | animation.TimedAnimation:
-        html = self.run_mode != "cli"
+    ) -> mfigure.Figure | animation.FuncAnimation:
+        html = self.run_mode == "gui"
         if info := _utils.undisplayable_info(plot, html=html):
             match self.run_mode:
                 case "api":
-                    raise NotImplementedError
+                    # TODO(): log the error in #4
+                    raise fastapi.HTTPException(500)
                 case "cli":
                     raise TypeError(info)
                 case "gui":

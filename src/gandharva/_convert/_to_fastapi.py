@@ -12,9 +12,10 @@
 # implied. See the License for the specific language governing
 # permissions and limitations under the License.
 
-__all__ = ["to_response", "to_response_model"]
+__all__ = ["LetMiddlewareHandleThisError", "to_response", "to_response_model"]
 
 import contextlib
+import dataclasses
 import functools
 import io
 import pathlib
@@ -47,7 +48,7 @@ def to_response_model(
     model_name: str,
     data: TypeForm[Any],
     kwargs: dict[str, Any],
-) -> None:
+) -> bool:
     try:
         kwargs["response_model"] = pydantic.create_model(
             model_name,
@@ -58,7 +59,7 @@ def to_response_model(
     except pydantic.PydanticSchemaGenerationError:
         pass
     else:
-        return
+        return False
     kwargs["response_model"] = pydantic.create_model(
         model_name,
         code=int,
@@ -66,13 +67,18 @@ def to_response_model(
         data=Any,
     )
     ann = _utils.unwrap_annotation(data)
-    _to_responses(ann, kwargs["responses"])
+    return _to_responses(ann, kwargs["responses"])
+
+
+@dataclasses.dataclass
+class LetMiddlewareHandleThisError(Exception):
+    obj: pn.viewable.Viewable
 
 
 def _to_responses(
     tp: TypeForm[Any],
     responses: dict[int | str, dict[str, Any]],
-) -> None:
+) -> bool:
     if _utils.isclass(tp):
         if issubclass(tp, animation.TimedAnimation):
             responses[200] = {"content": {"video/mp4": {}}}
@@ -87,18 +93,19 @@ def _to_responses(
         elif issubclass(tp, HoloVizTypes):
             if sys.version_info >= (3, 12):
                 responses[200] = {"content": {"text/html": {}}}
-            else:
-                match mpl.rcParams["savefig.format"]:
-                    case "png":
-                        responses[200] = {
-                            "content": {"image/png": {}, "video/mp4": {}},
-                        }
-                    case "svg":
-                        responses[200] = {
-                            "content": {"image/svg+xml": {}, "video/mp4": {}},
-                        }
-                    case _:
-                        raise NotImplementedError
+                return True
+            match mpl.rcParams["savefig.format"]:
+                case "png":
+                    responses[200] = {
+                        "content": {"image/png": {}, "video/mp4": {}},
+                    }
+                case "svg":
+                    responses[200] = {
+                        "content": {"image/svg+xml": {}, "video/mp4": {}},
+                    }
+                case _:
+                    raise NotImplementedError
+    return False
 
 
 @to_response.register
@@ -110,11 +117,15 @@ def _(value: fastapi.Response, app: Gandharva) -> fastapi.Response:
 if sys.version_info >= (3, 12):
     @to_response.register
     def _(value: pn.viewable.Viewable, app: Gandharva) -> object:
-        raise NotImplementedError
+        del app
+        raise LetMiddlewareHandleThisError(value)
 
     @to_response.register
     def _(value: hv.core.Dimensioned, app: Gandharva) -> object:
-        raise NotImplementedError
+        if content := _utils.undisplayable_info(value, html=True):
+            return fastapi.responses.HTMLResponse(content)
+        pane = pn.panel(value, widget_layout=pn.Column)  # pyright: ignore[reportUnknownMemberType]
+        return to_response(pane, app)
 else:
     @to_response.register
     def _(value: pn.viewable.Viewable, app: Gandharva) -> object:

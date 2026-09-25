@@ -13,6 +13,7 @@
 # permissions and limitations under the License.
 
 __all__ = [
+    "LetMiddlewareHandleThisError",
     "enable_zarr_v3",
     "from_pydantic_field",
     "gui_error_handler",
@@ -26,6 +27,10 @@ __all__ = [
 
 from ._from_pydantic import enable_zarr_v3, from_pydantic_field
 from ._to_cli import to_cli
-from ._to_fastapi import to_response, to_response_model
+from ._to_fastapi import (
+    LetMiddlewareHandleThisError,
+    to_response,
+    to_response_model,
+)
 from ._to_panel import gui_error_handler, reset_contextbar, to_panel
 from ._to_pydantic import to_pydantic_field

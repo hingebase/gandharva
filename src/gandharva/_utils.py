@@ -12,11 +12,11 @@
 # implied. See the License for the specific language governing
 # permissions and limitations under the License.
 
-__all__ = ["isclass", "undisplayable_info", "unwrap_annotation"]
+__all__ = ["isclass", "undisplayable_info", "unreachable", "unwrap_annotation"]
 
 import sys
 import types
-from typing import ForwardRef, cast
+from typing import ForwardRef, NoReturn, cast
 
 import holoviews as hv  # pyright: ignore[reportMissingTypeStubs]
 import param
@@ -34,7 +34,7 @@ else:
 
 
 def undisplayable_info(obj: hv.core.Dimensioned, *, html: bool = False) -> str:
-    if obj.traverse(specs=hv.DynamicMap):  # pyright: ignore[reportUnknownMemberType]
+    if not html and obj.traverse(specs=hv.DynamicMap):  # pyright: ignore[reportUnknownMemberType]
         message = (
             "'holoviews.DynamicMap' objects are unsupported; see "
             "https://github.com/holoviz/holoviews/issues/5021 for details. If "
@@ -54,6 +54,11 @@ def undisplayable_info(obj: hv.core.Dimensioned, *, html: bool = False) -> str:
     if isinstance(obj, hv.NdLayout):
         obj = hv.Layout()
     return util.undisplayable_info(obj, html)  # pyright: ignore[reportUnknownMemberType]
+
+
+def unreachable() -> NoReturn:
+    message = "Unreachable"
+    raise AssertionError(message)
 
 
 def unwrap_annotation(value: TypeForm[Any]) -> TypeForm[Any]:
