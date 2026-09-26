@@ -272,6 +272,8 @@ class _Sidebar(lumen.schema.JSONSchema):
         match schema:
             case {"items": {"enum": [*options]}}:
                 kwargs: dict[str, object] = {"options": options}
+                if "visual_size" in pmui.MultiSelect.param:
+                    kwargs["visual_size"] = "small"
                 if helper_text := _helper_text(schema):
                     # The implementation of `pmui.(Multi)Select` is
                     # different from other widgets, and `sx` doesn't
@@ -372,11 +374,17 @@ class _Sidebar(lumen.schema.JSONSchema):
         kwargs = _kwargs(schema)
         match schema:
             case {"format": "date-time"}:
+                if "size" in pmui.DatetimePicker.param:
+                    kwargs["size"] = "small"
                 return pmui.DatetimePicker, kwargs
             case {"format": "date"}:
+                if "size" in pmui.DatePicker.param:
+                    kwargs["size"] = "small"
                 return pmui.DatePicker, kwargs
             case {"format": "time"}:
                 kwargs["clock"] = "24h"
+                if "size" in pmui.TimePicker.param:
+                    kwargs["size"] = "small"
                 return pmui.TimePicker, kwargs
             case _:
                 kwargs["size"] = "small"
