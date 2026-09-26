@@ -99,6 +99,7 @@ Homepage = "https://github.com/hingebase/gandharva"
 "Issue Tracker" = "https://github.com/hingebase/gandharva/issues"
 
 [tool.basedpyright]
+failOnWarnings = true
 reportUnnecessaryTypeIgnoreComment = "warning"
 strict = ["."]
 typeCheckingMode = "off"
