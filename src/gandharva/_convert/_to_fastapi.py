@@ -135,7 +135,12 @@ def _(value: animation.TimedAnimation, app: Gandharva) -> fastapi.Response:
     del app
     with tempfile.TemporaryDirectory(ignore_cleanup_errors=True) as tmp:
         p = pathlib.Path(tmp, "plot.mp4")
-        value.save(p, writer="ffmpeg", codec="libopenh264")
+        value.save(
+            p,
+            writer="ffmpeg",
+            codec="libopenh264",
+            extra_args=["-movflags", "+faststart"],
+        )
         return fastapi.Response(p.read_bytes(), media_type="video/mp4")
 
 

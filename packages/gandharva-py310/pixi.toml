@@ -31,6 +31,7 @@ pydantic-settings = { workspace = true }
 python = "<3.12.0a0"
 rich = { workspace = true }
 rich-argparse = { workspace = true }
+sdl2 = { workspace = true }
 textual-image = { workspace = true }
 typing-extensions = { workspace = true }
 universal-pathlib = { workspace = true }
