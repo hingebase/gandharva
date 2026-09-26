@@ -71,7 +71,7 @@ typing = [
 dev = [
     "aiohttp >=3.13.0",
     "attrs >=25.4.0",
-    "basedpyright >=1.39.9",
+    "basedpyright >=1.40.1",
     "beautifulsoup4[lxml] >=4.15.0",
     "gandharva[typing]",
     "httpx2 >=2.2.0",
@@ -84,8 +84,8 @@ dev = [
     "pyproj <=3.6.1; sys_platform == 'darwin' and platform_machine == 'arm64' and platform_release < '23' and python_version < '3.13'",
     "pyproj <=3.7.0; sys_platform == 'darwin' and platform_machine == 'x86_64' and platform_release < '22' and python_version < '3.14'",
     "pytest >=9.1.1",
-    "ruff >=0.16.1",
-    "tombi >=1.4.0",
+    "ruff >=0.16.9",
+    "tombi >=1.5.5",
     "uvicorn >=0.38.0",
 ]
 
