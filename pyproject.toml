@@ -74,7 +74,6 @@ dev = [
     "basedpyright >=1.39.9",
     "beautifulsoup4[lxml] >=4.15.0",
     "gandharva[typing]",
-    "httpx >=0.28.1",
     "httpx2 >=2.2.0",
     "hvsampledata >=0.1.5",
     "lxml >=6.0.1",

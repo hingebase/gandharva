@@ -51,7 +51,6 @@ attrs = ">=25.4.0"
 basedpyright = ">=1.39.8"
 beautifulsoup4 = ">=4.15.0"
 ffmpeg = { build = "lgpl_*" }
-httpx = ">=0.28.1"
 httpx2 = ">=2.2.0"
 hvsampledata = ">=0.1.5"
 lxml = ">=6.0.1"
