@@ -114,6 +114,7 @@ select = ["ALL"]
 
 [tool.ruff.lint.per-file-ignores]
 "tests/**/*.py" = ["assert", "implicit-namespace-package"]
+"!**/conftest.py" = ["pytest-fixture-autouse"]
 
 [tool.ruff.lint.pycodestyle]
 max-doc-length = 72

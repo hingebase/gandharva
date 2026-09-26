@@ -15,6 +15,7 @@
 """Prevent textual-image from detecting Sixel support."""
 
 import contextlib
+import os
 
 
 class _DisableStdout(contextlib.redirect_stdout[None]):
@@ -24,3 +25,7 @@ class _DisableStdout(contextlib.redirect_stdout[None]):
 with _DisableStdout(None):
     from textual_image import renderable
 del renderable
+
+for key in list(os.environ):
+    if key.startswith(("BOKEH_", "PANEL_")):
+        del os.environ[key]

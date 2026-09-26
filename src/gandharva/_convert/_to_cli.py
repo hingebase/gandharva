@@ -101,7 +101,7 @@ def _(value: animation.TimedAnimation, app: Gandharva) -> None:
         subprocess.run(  # ruff: ignore[subprocess-without-shell-equals-true]
             [
                 ffplay,
-                *(("-loop", "0"), ("-autoexit",))[testing.TESTING],
+                *(("-loop", "0"), ("-autoexit", "-fs"))[testing.TESTING],
                 "-window_title", app.app_title() or "Gandharva",
                 filename,
             ],
