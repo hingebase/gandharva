@@ -12,20 +12,20 @@
 # implied. See the License for the specific language governing
 # permissions and limitations under the License.
 
-__all__ = [
-    "enable_zarr_v3",
-    "from_pydantic_field",
-    "gui_error_handler",
-    "reset_contextbar",
-    "to_cli",
-    "to_panel",
-    "to_pydantic_field",
-    "to_response",
-    "to_response_model",
-]
+"""Prevent textual-image from detecting Sixel support."""
 
-from ._from_pydantic import enable_zarr_v3, from_pydantic_field
-from ._to_cli import to_cli
-from ._to_fastapi import to_response, to_response_model
-from ._to_panel import gui_error_handler, reset_contextbar, to_panel
-from ._to_pydantic import to_pydantic_field
+import contextlib
+import os
+
+
+class _DisableStdout(contextlib.redirect_stdout[None]):
+    _stream = "__stdout__"
+
+
+with _DisableStdout(None):
+    from textual_image import renderable
+del renderable
+
+for key in list(os.environ):
+    if key.startswith(("BOKEH_", "PANEL_")):
+        del os.environ[key]

@@ -23,6 +23,7 @@ import sys
 from collections.abc import Callable, Generator, Mapping, Sequence
 from typing import TYPE_CHECKING, Annotated, ClassVar, cast, get_origin
 
+import hvplot  # pyright: ignore[reportMissingTypeStubs]
 import pydantic.alias_generators
 import pydantic_settings
 import rich.markdown
@@ -34,7 +35,7 @@ from typing_extensions import Any, Unpack, override
 from typing_inspection import introspection
 
 import gandharva as gd
-from gandharva import _convert
+from gandharva import _convert, testing
 
 from . import _base
 
@@ -194,10 +195,15 @@ class App(_base.App):
                 child.json_ = True
             pydantic_settings.CliApp.run_subcommand(model)
             return
-        self = cls(run_mode="cli")
-        with self.from_pydantic(model):
-            result = self.main()
-        _convert.to_cli(result, json=model.json_)
+        self = cast("gd.Gandharva", cls(run_mode="cli"))
+        try:
+            with self.from_pydantic(model):
+                hvplot.extension("matplotlib")
+                result = self.main()
+            _convert.to_cli(result, self, json=model.json_)
+        finally:
+            if testing.TESTING:
+                hvplot.extension("bokeh")
 
     @classmethod
     def _pydantic_cli_extra_sources(

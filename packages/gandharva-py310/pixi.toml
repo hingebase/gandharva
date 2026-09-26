@@ -1,0 +1,43 @@
+#:schema https://pixi.prefix.dev/v0.71.0/schema/manifest/schema.json
+
+[package.build.backend]
+name = "pixi-build-python"
+version = ">=0.6.0,<0.9.0"
+channels = ["https://prefix.dev/hingebase/catalina-backports"]
+
+[package.build.config]
+ignore-pypi-mapping = true
+
+[package.build.source]
+path = "../.."
+
+[package.host-dependencies]
+uv = { workspace = true }
+
+[package.run-dependencies]
+distributed = { workspace = true }
+fastapi-core = { workspace = true }
+ffmpeg = { workspace = true }
+hypothesis-jsonschema = { workspace = true }
+lumen = { workspace = true }
+netcdf4 = { workspace = true }
+packaging = { workspace = true }
+pandera-xarray = { workspace = true }
+panel = ">=1.9.1,<1.10.0a0"
+panel-material-ui = { workspace = true }
+platformdirs = { workspace = true }
+pydantic = { workspace = true }
+pydantic-settings = { workspace = true }
+python = "<3.12.0a0"
+rich = { workspace = true }
+rich-argparse = { workspace = true }
+textual-image = { workspace = true }
+typing-extensions = { workspace = true }
+universal-pathlib = { workspace = true }
+zarr = { workspace = true }
+
+[package.run-constraints]
+azure-identity = { workspace = true }
+pycairo = { workspace = true }
+pygobject = { workspace = true }
+wcwidth = { workspace = true }

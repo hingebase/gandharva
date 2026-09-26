@@ -35,9 +35,10 @@ def test_syncify_cli() -> None:
     pydantic_settings.CliApp.run(_App.to_cli(), cli_args=[])
 
 
-@pytest.mark.skip(reason="This test is not implemented")
+@pytest.mark.xfail(raises=NotImplementedError)
 def test_syncify_gui() -> None:
     """Call coroutine functions in GUI mode."""
+    raise NotImplementedError
 
 
 class _App(gd.Gandharva):

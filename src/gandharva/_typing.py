@@ -12,20 +12,19 @@
 # implied. See the License for the specific language governing
 # permissions and limitations under the License.
 
-__all__ = [
-    "enable_zarr_v3",
-    "from_pydantic_field",
-    "gui_error_handler",
-    "reset_contextbar",
-    "to_cli",
-    "to_panel",
-    "to_pydantic_field",
-    "to_response",
-    "to_response_model",
-]
+__all__ = ["Gandharva", "HoloVizTypes"]
 
-from ._from_pydantic import enable_zarr_v3, from_pydantic_field
-from ._to_cli import to_cli
-from ._to_fastapi import to_response, to_response_model
-from ._to_panel import gui_error_handler, reset_contextbar, to_panel
-from ._to_pydantic import to_pydantic_field
+from typing import TYPE_CHECKING
+
+import holoviews as hv  # pyright: ignore[reportMissingTypeStubs]
+import panel as pn
+from typing_extensions import TypeAliasType
+
+if TYPE_CHECKING:
+    import gandharva as gd
+
+# Prevent `functools.singledispatch` from evaluating the annotation
+# string too early
+Gandharva = TypeAliasType("Gandharva", "gd.Gandharva")
+
+HoloVizTypes = pn.viewable.Viewable | hv.core.Dimensioned
