@@ -12,10 +12,9 @@
 # implied. See the License for the specific language governing
 # permissions and limitations under the License.
 
-__all__ = ["LetMiddlewareHandleThisError", "to_response", "to_response_model"]
+__all__ = ["to_response", "to_response_model"]
 
 import contextlib
-import dataclasses
 import functools
 import io
 import pathlib
@@ -70,11 +69,6 @@ def to_response_model(
     return _to_responses(ann, kwargs["responses"])
 
 
-@dataclasses.dataclass
-class LetMiddlewareHandleThisError(Exception):
-    obj: pn.viewable.Viewable
-
-
 def _to_responses(
     tp: TypeForm[Any],
     responses: dict[int | str, dict[str, Any]],
@@ -118,7 +112,7 @@ if sys.version_info >= (3, 12):
     @to_response.register
     def _(value: pn.viewable.Viewable, app: Gandharva) -> object:
         del app
-        raise LetMiddlewareHandleThisError(value)
+        raise _utils.ReturnThePanelWrappedInThisError(value)
 
     @to_response.register
     def _(value: hv.core.Dimensioned, app: Gandharva) -> object:

@@ -162,7 +162,8 @@ class Gandharva(_fastapi.App, _panel.App):
                 case "cli":
                     raise TypeError(info)
                 case "gui":
-                    raise NotImplementedError
+                    pane = pn.pane.Alert(info, alert_type="danger", margin=5)
+                    raise _utils.ReturnThePanelWrappedInThisError(pane)
         return hv.render(plot, backend="matplotlib", dpi=0, fps=fps)  # pyright: ignore[reportUnknownMemberType, reportUnknownVariableType]
 
     def to_netcdf(

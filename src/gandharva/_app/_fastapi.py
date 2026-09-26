@@ -104,7 +104,7 @@ if sys.version_info >= (3, 12):
                     return
                 try:
                     await app(scope, receive, send)
-                except _convert.LetMiddlewareHandleThisError as e:
+                except _utils.ReturnThePanelWrappedInThisError as e:
                     obj = e.obj
                 else:
                     return

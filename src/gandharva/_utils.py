@@ -12,16 +12,24 @@
 # implied. See the License for the specific language governing
 # permissions and limitations under the License.
 
-__all__ = ["isclass", "undisplayable_info", "unreachable", "unwrap_annotation"]
+__all__ = [
+    "ReturnThePanelWrappedInThisError",
+    "isclass",
+    "undisplayable_info",
+    "unreachable",
+    "unwrap_annotation",
+]
 
+import dataclasses
 import sys
 import types
-from typing import ForwardRef, NoReturn, cast
+from typing import ForwardRef, Generic, NoReturn, cast
 
 import holoviews as hv  # pyright: ignore[reportMissingTypeStubs]
+import panel as pn
 import param
 from holoviews.plotting import util  # pyright: ignore[reportMissingTypeStubs]
-from typing_extensions import Any, TypeForm, evaluate_forward_ref
+from typing_extensions import Any, TypeForm, TypeVar, evaluate_forward_ref
 from typing_inspection import introspection, typing_objects
 
 if sys.version_info >= (3, 11):
@@ -31,6 +39,13 @@ else:
 
     def isclass(x: object, /) -> TypeIs[type[object]]:
         return not isinstance(x, types.GenericAlias) and isinstance(x, type)
+
+_T = TypeVar("_T", bound=pn.viewable.Viewable, default=pn.viewable.Viewable)
+
+
+@dataclasses.dataclass
+class ReturnThePanelWrappedInThisError(Exception, Generic[_T]):
+    obj: _T
 
 
 def undisplayable_info(obj: hv.core.Dimensioned, *, html: bool = False) -> str:

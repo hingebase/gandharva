@@ -40,6 +40,7 @@ from . import _common
 _TEMPLATE = '<b>{0.__name__}</b>\n<pre style="overflow-y: auto">{1}</pre>'
 
 
+@functools.singledispatch
 def gui_error_handler(exc: Exception) -> pn.pane.Alert:
     # Taken from pn.io.handlers.run_app
     return pn.pane.Alert(
@@ -48,6 +49,13 @@ def gui_error_handler(exc: Exception) -> pn.pane.Alert:
         margin=5,
         sizing_mode="stretch_width",
     )
+
+
+@gui_error_handler.register(_utils.ReturnThePanelWrappedInThisError)
+def _(
+    exc: _utils.ReturnThePanelWrappedInThisError[pn.pane.Alert],
+) -> pn.pane.Alert:
+    return exc.obj
 
 
 def reset_contextbar(contextbar: pn.rx, contextbar_open: pn.rx) -> None:
