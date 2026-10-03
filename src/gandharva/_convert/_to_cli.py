@@ -98,15 +98,15 @@ def _(value: animation.TimedAnimation, app: Gandharva) -> None:
     with tempfile.TemporaryDirectory(ignore_cleanup_errors=True) as tmp:
         filename = str(pathlib.Path(tmp, "plot.mp4"))
         value.save(filename, writer="ffmpeg", codec="libopenh264")
-        subprocess.run(  # ruff: ignore[subprocess-without-shell-equals-true]
-            [
-                ffplay,
-                *(("-loop", "0"), ("-autoexit", "-fs"))[testing.TESTING],
-                "-window_title", app.app_title() or "Gandharva",
-                filename,
-            ],
-            check=True,
-        )
+        args = [
+            ffplay,
+            "-loop", "0",
+            "-window_title", app.app_title() or "Gandharva",
+            filename,
+        ]
+        if testing.TESTING:
+            args[1:3] = "-autoexit", "-fs"
+        subprocess.run(args, check=True)  # ruff: ignore[subprocess-without-shell-equals-true]
 
 
 @_to_cli.register
