@@ -26,7 +26,7 @@ pandera-xarray = ">=0.32.1,<2.0.0"
 panel-material-ui = ">=0.13.0,<2.0.0"
 platformdirs = ">=4.6.0,<5.0.0"
 pycairo = "<=1.26.1"
-pydantic = ">=2.12.4,<4.0.0"
+pydantic = ">=2.12.4,<=2.13.5"
 pydantic-settings = ">=2.13.0,<4.0.0"
 pygobject = "<=3.48.2"
 rich = ">=14.2.0"
@@ -35,7 +35,7 @@ sdl2 = { version = "<=2.30.10", when = "__osx 10.15.*" }
 textual-image = ">=0.8.5,!=0.9.0,!=0.10.0,!=0.11.0,!=0.12.0,!=0.13.0,!=0.13.1,<2.0.0"
 typing-extensions = ">=4.15.0,<5.0.0"
 universal-pathlib = ">=0.3.10,<2.0.0"
-uv = ">=0.10.2,<0.13.0"
+uv = ">=0.10.2,<0.14.0"
 wcwidth = "<=0.8.5"
 zarr = ">=2.18.3,<4.0.0"
 
@@ -74,19 +74,19 @@ gandharva = { path = "packages/gandharva-py310" }
 python-gil = "3.11.*"
 
 [feature.py311.target.linux.dependencies]
-ruff = ">=0.16.9"
+ruff = ">=0.17.0"
 tombi = ">=1.5.5"
 
 [feature.py311.target.osx-64.dependencies]
-ruff = { version = ">=0.16.7", channel = "https://prefix.dev/github-releases" }
+ruff = { version = ">=0.16.9", channel = "https://prefix.dev/github-releases" }
 tombi = { version = ">=1.5.5", channel = "https://prefix.dev/github-releases" }
 
 [feature.py311.target.osx-arm64.dependencies]
-ruff = ">=0.16.9"
+ruff = ">=0.17.0"
 tombi = ">=1.5.5"
 
 [feature.py311.target.win-64.dependencies]
-ruff = ">=0.16.9"
+ruff = ">=0.17.0"
 tombi = ">=1.5.5"
 
 [feature.py314]

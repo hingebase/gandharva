@@ -16,7 +16,7 @@ __all__ = ["Gandharva"]
 
 import asyncio
 import contextlib
-import datetime
+import datetime as dt
 import functools
 import getpass
 import inspect
@@ -47,7 +47,7 @@ from . import _base, _fastapi, _panel
 if sys.version_info >= (3, 11):
     from datetime import UTC
 else:
-    UTC = datetime.timezone.utc
+    UTC = dt.timezone.utc
 
 if TYPE_CHECKING:
     from _typeshed import StrPath
@@ -271,7 +271,7 @@ class Gandharva(_fastapi.App, _panel.App):
         return "\n".join(lines) if lines else None
 
     def dataset_history_line(self) -> str | None:
-        mtime = datetime.datetime.now(UTC).isoformat(timespec="seconds")
+        mtime = dt.datetime.now(UTC).isoformat(timespec="seconds")
         user = getpass.getuser()
         prog = self.app_distribution_metadata().get("Name", "gandharva")
         match self.run_mode:
