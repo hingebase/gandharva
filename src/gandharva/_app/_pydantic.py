@@ -173,7 +173,6 @@ class App(_base.App):
         config_wrapper = _config.ConfigWrapper.for_model(
             tuple(filter(App.__subclasscheck__, reversed(cls.__bases__))),
             dict(vars(cls)),
-            cls.__annotations__,
             dict(kwargs),
         )
         cls.model_config = cast(

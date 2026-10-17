@@ -2,7 +2,7 @@
 #:schema https://pixi.prefix.dev/v0.71.0/schema/manifest/schema.json
 
 [workspace]
-channels = ["conda-forge"]
+channels = ["conda-forge", "https://prefix.dev/hingebase/gandharva"]
 platforms = [
     "linux-64",
     "linux-aarch64",
@@ -26,7 +26,7 @@ pandera-xarray = ">=0.32.1,<2.0.0"
 panel-material-ui = ">=0.13.0,<2.0.0"
 platformdirs = ">=4.6.0,<5.0.0"
 pycairo = "<=1.26.1"
-pydantic = ">=2.12.4,<=2.13.5"
+pydantic = ">=2.14.0,<4.0.0"
 pydantic-settings = ">=2.13.0,<4.0.0"
 pygobject = "<=3.48.2"
 rich = ">=14.2.0"
@@ -61,6 +61,9 @@ pytest = ">=9.1.1"
 types-lxml = ">=2026.2.16"
 uv = ">=0.10.2"
 uvicorn = ">=0.38.0"
+
+[target.osx-64.dependencies]
+pydantic-core = { channel = "https://prefix.dev/hingebase/gandharva" }
 
 [environments]
 default = ["py311"]
