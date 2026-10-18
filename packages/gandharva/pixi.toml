@@ -39,9 +39,3 @@ textual-image = { workspace = true }
 typing-extensions = { workspace = true }
 universal-pathlib = { workspace = true }
 zarr = { workspace = true }
-
-[package.run-constraints]
-azure-identity = { workspace = true }
-pycairo = { workspace = true }
-pygobject = { workspace = true }
-wcwidth = { workspace = true }

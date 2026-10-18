@@ -14,7 +14,6 @@ preview = ["pixi-build"]
 requires-pixi = ">=0.71.0"
 
 [workspace.dependencies]
-azure-identity = ">=1.25.2"
 distributed = ">=2026.1.1"
 fastapi-core = ">=0.119.1,<2.0.0"
 ffmpeg = ">=4.4.2"
@@ -25,10 +24,8 @@ packaging = ">=26.0.0"
 pandera-xarray = ">=0.32.1,<2.0.0"
 panel-material-ui = ">=0.13.0,<2.0.0"
 platformdirs = ">=4.6.0,<5.0.0"
-pycairo = "<=1.26.1"
 pydantic = ">=2.14.0,<4.0.0"
 pydantic-settings = ">=2.13.0,<4.0.0"
-pygobject = "<=3.48.2"
 rich = ">=14.2.0"
 rich-argparse = ">=1.7.2,<2.0.0"
 sdl2 = { version = "<=2.30.10", when = "__osx 10.15.*" }
@@ -36,7 +33,6 @@ textual-image = ">=0.8.5,!=0.9.0,!=0.10.0,!=0.11.0,!=0.12.0,!=0.13.0,!=0.13.1,<2
 typing-extensions = ">=4.15.0,<5.0.0"
 universal-pathlib = ">=0.3.10,<2.0.0"
 uv = ">=0.10.2,<0.14.0"
-wcwidth = "<=0.8.5"
 zarr = ">=2.18.3,<4.0.0"
 
 [target]
