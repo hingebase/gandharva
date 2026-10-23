@@ -59,7 +59,11 @@ _Panels = dict[
     # i.e. TViewableFuncOrPath but not BaseTemplate
     # See https://github.com/holoviz/panel/issues/2476
 ]
-_T = TypeVar("_T", default=type[pn.widgets.WidgetBase])
+_T = TypeVar(
+    "_T",
+    bound=type[pn.widgets.WidgetBase],
+    default=type[pn.widgets.WidgetBase],
+)
 _Widgets = Iterable[tuple[str, pn.widgets.WidgetBase]]
 _WidgetType = tuple[_T, dict[str, object]]
 
@@ -371,22 +375,17 @@ class _Sidebar(lumen.schema.JSONSchema):
 
     @override
     def _string_type(self, schema: Mapping[str, object]) -> _WidgetType[type]:
-        kwargs = _kwargs(schema)
         match schema:
             case {"format": "date-time"}:
-                if "size" in pmui.DatetimePicker.param:
-                    kwargs["size"] = "small"
-                return pmui.DatetimePicker, kwargs
+                return _pmui_pr_727(pmui.DatetimePicker, schema)
             case {"format": "date"}:
-                if "size" in pmui.DatePicker.param:
-                    kwargs["size"] = "small"
-                return pmui.DatePicker, kwargs
+                return _pmui_pr_727(pmui.DatePicker, schema)
             case {"format": "time"}:
+                widget_type, kwargs = _pmui_pr_727(pmui.TimePicker, schema)
                 kwargs["clock"] = "24h"
-                if "size" in pmui.TimePicker.param:
-                    kwargs["size"] = "small"
-                return pmui.TimePicker, kwargs
+                return widget_type, kwargs
             case _:
+                kwargs = _kwargs(schema)
                 kwargs["size"] = "small"
                 if max_length := schema.get("maxLength"):
                     kwargs["max_length"] = max_length
@@ -433,6 +432,19 @@ def _kwargs(schema: Mapping[str, object]) -> dict[str, object]:
 
 def _match(x: "Artist") -> bool:
     return isinstance(x, _PREFER_PNG)
+
+
+def _pmui_pr_727(
+    widget_type: _T,
+    schema: Mapping[str, object],
+) -> _WidgetType[_T]:
+    if "size" not in widget_type.param:
+        return widget_type, _kwargs(schema)
+    # pmui #727 introduced `size` but broke `sizing_mode` and `sx`
+    kwargs: dict[str, object] = {"size": "small"}
+    if helper_text := _helper_text(schema):
+        kwargs["helper_text"] = _base.summary(helper_text)
+    return widget_type, kwargs
 
 
 _locks = weakref.WeakKeyDictionary[asyncio.AbstractEventLoop, RLock]()
