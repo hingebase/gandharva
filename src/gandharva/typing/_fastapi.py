@@ -99,7 +99,6 @@ class FastAPIParameters(_APIRouter[fastapi.FastAPI], total=False):
     terms_of_service: str | None
     contact: dict[str, Any] | None
     license_info: dict[str, Any] | None
-    openapi_prefix: Never
     root_path: str
     root_path_in_servers: bool
     webhooks: fastapi.APIRouter | None
