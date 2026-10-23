@@ -85,13 +85,8 @@ tombi = ">=1.5.5"
 ruff = ">=0.17.0"
 tombi = ">=1.5.5"
 
-[feature.py314]
-channels = ["conda-forge", "pyviz", "pyviz/label/dev"]
-
 [feature.py314.dependencies]
 gandharva = { path = "packages/gandharva" }
-panel = { channel = "pyviz/label/dev" }
-panel-material-ui = { channel = "pyviz" }
 python-gil = "3.14.*"
 
 [tasks]

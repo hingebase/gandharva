@@ -26,7 +26,7 @@ lxml = ">=6.0.1,<7.0.0"
 netcdf4 = { workspace = true }
 packaging = { workspace = true }
 pandera-xarray = { workspace = true }
-panel = ">=1.10.0b1,<2.0.0"
+panel = ">=1.10.0,<2.0.0"
 panel-material-ui = { workspace = true }
 platformdirs = { workspace = true }
 pydantic = { workspace = true }
