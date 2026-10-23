@@ -118,7 +118,7 @@ if sys.version_info >= (3, 12):
     def _(value: hv.core.Dimensioned, app: Gandharva) -> object:
         if content := _utils.undisplayable_info(value, html=True):
             return fastapi.responses.HTMLResponse(content)
-        pane = pn.panel(value, widget_layout=pn.Column)  # pyright: ignore[reportUnknownMemberType]
+        pane = pn.ui.panel(value, widget_layout=pn.Column)  # pyright: ignore[reportUnknownMemberType]
         return to_response(pane, app)
 else:
     @to_response.register
