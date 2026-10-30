@@ -1,5 +1,5 @@
 [build-system]
-requires = ["uv-build >=0.10.2,<0.13.0"]
+requires = ["uv-build >=0.10.2,<0.14.0"]
 build-backend = "uv_build"
 
 [project]
@@ -48,10 +48,10 @@ dependencies = [
     "packaging >=26.0.0",
     "pandera[xarray] >=0.32.1,<2.0.0",
     "panel >=1.9.1,<2.0.0",
-    "panel >=1.10.0b1; python_version >= '3.12'",
+    "panel >=1.10.0; python_version >= '3.12'",
     "panel-material-ui >=0.13.0,<2.0.0",
     "platformdirs >=4.6.0,<5.0.0",
-    "pydantic >=2.12.4,<4.0.0",
+    "pydantic >=2.12.4,<=2.13.5",
     "pydantic-settings >=2.13.0,<4.0.0",
     "rich >=14.2.0",
     "rich-argparse >=1.7.2,<2.0.0",
@@ -71,7 +71,7 @@ typing = [
 dev = [
     "aiohttp >=3.13.0",
     "attrs >=25.4.0",
-    "basedpyright >=1.40.1",
+    "basedpyright >=1.40.2",
     "beautifulsoup4[lxml] >=4.15.0",
     "gandharva[typing]",
     "httpx2 >=2.2.0",
@@ -83,9 +83,9 @@ dev = [
     "pyproj <=3.6.1; sys_platform == 'darwin' and platform_machine == 'x86_64' and platform_release < '21' and python_version < '3.13'",
     "pyproj <=3.6.1; sys_platform == 'darwin' and platform_machine == 'arm64' and platform_release < '23' and python_version < '3.13'",
     "pyproj <=3.7.0; sys_platform == 'darwin' and platform_machine == 'x86_64' and platform_release < '22' and python_version < '3.14'",
-    "pytest >=9.1.1",
-    "ruff >=0.16.9",
-    "tombi >=1.5.5",
+    "pytest >=9.2.0",
+    "ruff >=0.17.3",
+    "tombi >=1.9.8",
     "uvicorn >=0.38.0",
 ]
 

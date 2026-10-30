@@ -97,8 +97,7 @@ def _(
     if object_ := _utils.undisplayable_info(value, html=True):
         kwargs = dict(app.panel_html_params(), object=object_)
         return HTML(**kwargs)
-    # https://github.com/panel-extensions/panel-material-ui/blob/v0.14.2/src/panel_material_ui/pane/base.py#L11-L18
-    pane = pn.pane.HoloViews(
+    pane = getattr(pn, "ui", pn.pane).HoloViews(
         value,
         widget_layout=pn.Column,
         widget_location="top",

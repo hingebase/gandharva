@@ -33,9 +33,7 @@ if TYPE_CHECKING:
     from bokeh.models.ui.tooltips import Tooltip
     from markdown.extensions import Extension
     from markdown_it import MarkdownIt
-    from panel.config import (
-        _base_config,  # pyright: ignore[reportPrivateUsage]
-    )
+    from panel.config import _base_config  # pyright: ignore[reportPrivateUsage]
     from panel_material_ui.template.base import Meta
 
 _DataFrameAlign = Literal["start", "end", "center"] | None
