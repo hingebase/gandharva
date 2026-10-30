@@ -26,9 +26,9 @@ pandera-xarray = { workspace = true }
 panel = ">=1.9.1,<1.10.0a0"
 panel-material-ui = { workspace = true }
 platformdirs = { workspace = true }
-pydantic = { workspace = true }
-pydantic-settings = { workspace = true }
-python = "<3.12.0a0"
+pydantic = ">=2.12.4,<=2.13.5"
+pydantic-settings = ">=2.13.0,<4.0.0"
+python-gil = "3.10.*"
 rich = { workspace = true }
 rich-argparse = { workspace = true }
 sdl2 = { workspace = true }

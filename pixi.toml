@@ -24,8 +24,6 @@ packaging = ">=26.0.0"
 pandera-xarray = ">=0.32.1,<2.0.0"
 panel-material-ui = ">=0.13.0,<2.0.0"
 platformdirs = ">=4.6.0,<5.0.0"
-pydantic = ">=2.12.4,<=2.13.5"
-pydantic-settings = ">=2.13.0,<4.0.0"
 rich = ">=14.2.0"
 rich-argparse = ">=1.7.2,<2.0.0"
 sdl2 = { version = "<=2.30.10", when = "__osx 10.15.*" }
@@ -45,7 +43,6 @@ win-64 = { dependencies = { libblas = { build = "*_mkl" } } }
 [dependencies]
 aiohttp = ">=3.13.0"
 attrs = ">=25.4.0"
-basedpyright = ">=1.40.2"
 beautifulsoup4 = ">=4.15.0"
 ffmpeg = { build = "lgpl_*" }
 httpx2 = ">=2.2.0"
@@ -60,20 +57,29 @@ uvicorn = ">=0.38.0"
 
 [environments]
 default = ["py311"]
+py310 = ["py310"]
 py314 = ["py314"]
 
+[feature.py310.dependencies]
+gandharva = { path = "packages/gandharva-py310" }
+
 [feature.py311]
-channels = ["conda-forge", "https://prefix.dev/github-releases"]
+channels = [
+    "conda-forge",
+    "https://prefix.dev/github-releases",
+    "https://prefix.dev/hingebase/gandharva",
+]
 
 [feature.py311.dependencies]
-gandharva = { path = "packages/gandharva-py310" }
-python-gil = "3.11.*"
+basedpyright = ">=1.40.2"
+gandharva = { path = "packages/gandharva-py311" }
 
 [feature.py311.target.linux.dependencies]
 ruff = ">=0.17.3"
 tombi = ">=1.9.8"
 
 [feature.py311.target.osx-64.dependencies]
+pydantic-core = { channel = "https://prefix.dev/hingebase/gandharva" }
 ruff = { version = ">=0.17.3", channel = "https://prefix.dev/github-releases" }
 tombi = { version = ">=1.9.7", channel = "https://prefix.dev/github-releases" }
 
@@ -85,13 +91,21 @@ tombi = ">=1.9.8"
 ruff = ">=0.17.3"
 tombi = ">=1.9.8"
 
+[feature.py314]
+channels = ["conda-forge", "https://prefix.dev/hingebase/gandharva"]
+
 [feature.py314.dependencies]
+basedpyright = ">=1.40.2"
 gandharva = { path = "packages/gandharva" }
 python-gil = "3.14.*"
+
+[feature.py314.target.osx-64.dependencies]
+pydantic-core = { channel = "https://prefix.dev/hingebase/gandharva" }
 
 [tasks]
 pytest = "pytest"
 test = [
     { task = "pytest", environment = "default" },
+    { task = "pytest", environment = "py310" },
     { task = "pytest", environment = "py314" },
 ]

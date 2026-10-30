@@ -44,6 +44,11 @@ else:
             assert patched
 
 
+@pytest.mark.skipif(
+    os.getenv("PIXI_PROJECT_NAME") == "gandharva"
+        and sys.version_info < (3, 11),
+    reason="https://conda-forge.org/news/2026/08/31/python-3-10/",
+)
 def test_basedpyright(monkeypatch: pytest.MonkeyPatch) -> None:
     """Type checking with basedpyright."""
     argv = [

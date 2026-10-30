@@ -170,12 +170,14 @@ class App(_base.App):
                 message = f"Gandharva is incompatible with {parent} classes"
                 raise gd.ApplicationBuilderError(message)
 
-        config_wrapper = _config.ConfigWrapper.for_model(
-            tuple(filter(App.__subclasscheck__, reversed(cls.__bases__))),
-            dict(vars(cls)),
-            cls.__annotations__,
-            dict(kwargs),
-        )
+        bases = tuple(filter(App.__subclasscheck__, reversed(cls.__bases__)))
+        namespace = dict(vars(cls))
+        if sys.version_info >= (3, 11):
+            config_wrapper = _config.ConfigWrapper.for_model(
+                bases, namespace, dict(kwargs))
+        else:
+            config_wrapper = _config.ConfigWrapper.for_model(
+                bases, namespace, cls.__annotations__, dict(kwargs))
         cls.model_config = cast(
             "pydantic_settings.SettingsConfigDict",
             config_wrapper.config_dict,
