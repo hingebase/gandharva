@@ -52,9 +52,7 @@ else:
 if TYPE_CHECKING:
     from _typeshed import StrPath
     from fastapi import Request
-    from metpy import (  # pyright: ignore[reportMissingTypeStubs]
-        MetPyDatasetAccessor,
-    )
+    from metpy import MetPyDatasetAccessor  # pyright: ignore[reportMissingTypeStubs]
     from tornado.httputil import HTTPServerRequest
 
 _GandharvaT = TypeVar("_GandharvaT", bound=type["Gandharva"])

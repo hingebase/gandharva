@@ -31,12 +31,8 @@ import pydantic
 from bokeh.server.contexts import BokehSessionContext
 from distributed.scheduler import RLock  # pyright: ignore[reportPrivateImportUsage]
 from hypothesis_jsonschema import _resolve  # ruff: ignore[import-private-name]
-from matplotlib.collections import (
-    _MeshData,  # pyright: ignore[reportPrivateUsage]  # ruff: ignore[import-private-name]
-)
-from matplotlib.image import (
-    _ImageBase,  # pyright: ignore[reportPrivateUsage]  # ruff: ignore[import-private-name]
-)
+from matplotlib.collections import _MeshData  # pyright: ignore[reportPrivateUsage]  # ruff: ignore[import-private-name]
+from matplotlib.image import _ImageBase  # pyright: ignore[reportPrivateUsage]  # ruff: ignore[import-private-name]
 from typing_extensions import Any, TypeVar, Unpack, final, override
 
 import gandharva as gd

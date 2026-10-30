@@ -28,9 +28,7 @@ from typing import NoReturn
 import pytest
 
 if sys.platform == "win32":
-    from contextlib import (
-        nullcontext as _astral_context,  # pyright: ignore[reportAssignmentType]
-    )
+    from contextlib import nullcontext as _astral_context  # pyright: ignore[reportAssignmentType]
 else:
     @contextlib.contextmanager
     def _astral_context(monkeypatch: pytest.MonkeyPatch) -> Generator[object]:
