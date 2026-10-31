@@ -20,6 +20,7 @@ ffmpeg = ">=4.4.2"
 hypothesis-jsonschema = ">=0.23.1,<2.0.0"
 lumen = ">=0.6.1,<2.0.0"
 netcdf4 = ">=1.7.3,<2.0.0"
+numcodecs = { version = "<=0.16.5", when = "__osx 10.15.*" }
 packaging = ">=26.0.0"
 pandera-xarray = ">=0.32.1,<2.0.0"
 panel-material-ui = ">=0.13.0,<2.0.0"

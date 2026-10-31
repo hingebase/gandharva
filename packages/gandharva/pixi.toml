@@ -39,3 +39,6 @@ textual-image = { workspace = true }
 typing-extensions = { workspace = true }
 universal-pathlib = { workspace = true }
 zarr = { workspace = true }
+
+[package.run-constraints]
+numcodecs = { workspace = true }
