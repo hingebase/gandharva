@@ -17,8 +17,10 @@ __all__ = ["App"]
 import contextlib
 import functools
 import inspect
+import io
 import itertools
 import keyword
+import logging
 import sys
 from collections.abc import Callable, Generator, Mapping, Sequence
 from typing import TYPE_CHECKING, Annotated, ClassVar, cast, get_origin
@@ -26,11 +28,13 @@ from typing import TYPE_CHECKING, Annotated, ClassVar, cast, get_origin
 import hvplot  # pyright: ignore[reportMissingTypeStubs]
 import pydantic.alias_generators
 import pydantic_settings
+import rich.logging
 import rich.markdown
 import rich_argparse
 from pydantic._internal import _config  # ruff: ignore[import-private-name]
 from pydantic.fields import FieldInfo
 from pydantic_settings import BaseSettings, PydanticBaseSettingsSource
+from rich.text import Text
 from typing_extensions import Any, Unpack, override
 from typing_inspection import introspection
 
@@ -201,6 +205,7 @@ class App(_base.App):
         try:
             with self.from_pydantic(model):
                 hvplot.extension("matplotlib")
+                _setup_notifications()
                 result = self.main()
             _convert.to_cli(result, self, json=model.json_)
         finally:
@@ -357,6 +362,30 @@ class _CliAppBaseSettings(_CliAppBaseModel, BaseSettings):
         )
 
 
+class _RichHandler(rich.logging.RichHandler):
+    @override
+    def get_level_text(self, record: logging.LogRecord) -> Text:
+        if _is_success(record):
+            return Text.styled("SUCCESS ", "logging.level.debug")
+        return super().get_level_text(record)
+
+
+class _Style(logging.PercentStyle):
+    def _format(self, record: logging.LogRecord) -> str:
+        if _is_success(record):
+            values = dict(record.__dict__, levelname="SUCCESS")
+        else:
+            values = record.__dict__
+        return self._fmt % values
+
+
+def _is_success(record: logging.LogRecord) -> bool:
+    return (
+        record.levelno == logging.INFO
+        and getattr(record, "success", False) is True
+    )
+
+
 @functools.lru_cache(maxsize=1)
 def _reserved() -> frozenset[str]:
     return frozenset(
@@ -364,3 +393,24 @@ def _reserved() -> frozenset[str]:
             map(_safe_get_annotations, gd.Gandharva.__mro__),
         ),
     )
+
+
+def _setup_notifications() -> None:
+    logger = logging.getLogger("_gandharva")
+    if (
+        isinstance(sys.stdout, io.TextIOBase)
+        and sys.stdout.isatty()
+        and not rich.console.detect_legacy_windows()
+    ):
+        handler = _RichHandler(log_time_format="[%Y-%m-%d %X]")
+    else:
+        handler = logging.StreamHandler()
+        formatter = logging.Formatter(datefmt="%Y-%m-%d %X")
+        formatter._style = _Style("[%(asctime)s] %(levelname)-8s %(message)s")  # ruff: ignore[private-member-access]
+        handler.setFormatter(formatter)
+    for existing in logger.handlers:
+        if type(existing) is type(handler):
+            level = existing.level
+            if not level or logger.isEnabledFor(level):
+                return
+    logger.addHandler(handler)
