@@ -7,6 +7,7 @@ platforms = [
     "linux-64",
     "linux-aarch64",
     { platform = "osx-64", macos = "10.15" },
+    { platform = "osx-64", macos = "11.0" },
     { platform = "osx-arm64", macos = "11.0" },
     "win-64",
 ]
@@ -15,12 +16,14 @@ requires-pixi = ">=0.71.0"
 
 [workspace.dependencies]
 distributed = ">=2026.1.1"
-fastapi-core = ">=0.119.1,<2.0.0"
+fastapi-core = ">=0.119.1,!=0.142.0,!=0.142.1,!=0.142.2,!=0.142.3,!=0.142.4,<2.0.0"
 ffmpeg = ">=4.4.2"
 hypothesis-jsonschema = ">=0.23.1,<2.0.0"
+logfire = ">=5.2.0,<6.0.0"
 lumen = ">=0.6.1,<2.0.0"
 netcdf4 = ">=1.7.3,<2.0.0"
 numcodecs = { version = "<=0.16.5", when = "__osx 10.15.*" }
+opentelemetry-instrumentation-fastapi = ">=0.42b0"
 packaging = ">=26.0.0"
 pandera-xarray = ">=0.32.1,<2.0.0"
 panel-material-ui = ">=0.13.0,<2.0.0"
@@ -57,56 +60,85 @@ uv = ">=0.10.2"
 uvicorn = ">=0.38.0"
 
 [environments]
-default = ["py311"]
-py310 = ["py310"]
-py314 = ["py314"]
+default = ["py311", "basedpyright", "catalina", "pydantic-core", "tests"]
+py310 = ["py310", "catalina"]
+py313 = ["py313", "basedpyright", "catalina", "pydantic-core"]
+py314 = ["py314", "basedpyright"]
+
+[feature.basedpyright.dependencies]
+basedpyright = ">=1.40.2"
+
+[feature.catalina]
+platforms = [
+    "linux-64",
+    "linux-aarch64",
+    "osx-64-macos-10-15",
+    "osx-arm64-macos-11-0",
+    "win-64",
+]
+
+[feature.pydantic-core]
+channels = ["https://prefix.dev/hingebase/gandharva"]
+
+[feature.pydantic-core.target.osx-64.dependencies]
+pydantic-core = { channel = "https://prefix.dev/hingebase/gandharva" }
 
 [feature.py310.dependencies]
 gandharva = { path = "packages/gandharva-py310" }
 
-[feature.py311]
-channels = [
-    "conda-forge",
-    "https://prefix.dev/github-releases",
-    "https://prefix.dev/hingebase/gandharva",
-]
-
 [feature.py311.dependencies]
-basedpyright = ">=1.40.2"
 gandharva = { path = "packages/gandharva-py311" }
 
-[feature.py311.target.linux.dependencies]
-ruff = ">=0.17.3"
-tombi = ">=1.9.8"
-
-[feature.py311.target.osx-64.dependencies]
-pydantic-core = { channel = "https://prefix.dev/hingebase/gandharva" }
-ruff = { version = ">=0.17.3", channel = "https://prefix.dev/github-releases" }
-tombi = { version = ">=1.9.7", channel = "https://prefix.dev/github-releases" }
-
-[feature.py311.target.osx-arm64.dependencies]
-ruff = ">=0.17.3"
-tombi = ">=1.9.8"
-
-[feature.py311.target.win-64.dependencies]
-ruff = ">=0.17.3"
-tombi = ">=1.9.8"
+[feature.py313.dependencies]
+gandharva = { path = "packages/gandharva" }
+python-gil = "3.13.*"
 
 [feature.py314]
-channels = ["conda-forge", "https://prefix.dev/hingebase/gandharva"]
+platforms = [
+    "linux-64",
+    "linux-aarch64",
+    "osx-64-macos-11-0",
+    "osx-arm64-macos-11-0",
+    "win-64",
+]
 
 [feature.py314.dependencies]
-basedpyright = ">=1.40.2"
 gandharva = { path = "packages/gandharva" }
 python-gil = "3.14.*"
 
-[feature.py314.target.osx-64.dependencies]
-pydantic-core = { channel = "https://prefix.dev/hingebase/gandharva" }
+[feature.tests]
+channels = ["conda-forge", "https://prefix.dev/github-releases"]
 
-[tasks]
-pytest = "pytest"
+[feature.tests.target.linux.dependencies]
+ruff = ">=0.17.3"
+tombi = ">=1.9.8"
+
+[feature.tests.target.osx-64.dependencies]
+ruff = { version = ">=0.17.3", channel = "https://prefix.dev/github-releases" }
+tombi = { version = ">=1.9.7", channel = "https://prefix.dev/github-releases" }
+
+[feature.tests.target.osx-arm64.dependencies]
+ruff = ">=0.17.3"
+tombi = ">=1.9.8"
+
+[feature.tests.target.win-64.dependencies]
+ruff = ">=0.17.3"
+tombi = ">=1.9.8"
+
+[feature.tests.tasks]
 test = [
     { task = "pytest", environment = "default" },
     { task = "pytest", environment = "py310" },
+    { task = "pytest", environment = "py313" },
     { task = "pytest", environment = "py314" },
 ]
+
+[feature.tests.target.osx-64.tasks]
+test = [
+    { task = "pytest", environment = "default" },
+    { task = "pytest", environment = "py310" },
+    { task = "pytest", environment = "py313" },
+]
+
+[tasks]
+pytest = "pytest"

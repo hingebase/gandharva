@@ -275,7 +275,10 @@ class _NotificationHandler(logging.Handler):
             method = notification_area.success  # pyright: ignore[reportUnknownMemberType, reportUnknownVariableType]
         else:
             method = notification_area.info  # pyright: ignore[reportUnknownMemberType, reportUnknownVariableType]
-        method(record.getMessage(), duration=0)
+        method(
+            record.getMessage(),
+            getattr(record, "gandharva.gui.duration", 3000),
+        )
 
 
 class _Sidebar(lumen.schema.JSONSchema):

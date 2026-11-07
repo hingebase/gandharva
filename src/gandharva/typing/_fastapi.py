@@ -12,12 +12,20 @@
 # implied. See the License for the specific language governing
 # permissions and limitations under the License.
 
-__all__ = ["APIRouteParameters", "APIRouterParameters", "FastAPIParameters"]
+__all__ = [
+    "APIRouteParameters",
+    "APIRouterParameters",
+    "FastAPIParameters",
+    "LogfireConfiguration",
+]
 
-from collections.abc import Callable, Sequence
-from typing import TYPE_CHECKING, Generic
+import pathlib
+from collections.abc import Callable, Mapping, Sequence
+from typing import TYPE_CHECKING, Generic, Literal
 
 import fastapi
+import logfire
+from opentelemetry.sdk.trace import SpanProcessor
 from typing_extensions import Any, Never, Required, TypedDict, TypeVar
 
 if TYPE_CHECKING:
@@ -107,3 +115,28 @@ class FastAPIParameters(_APIRouter[fastapi.FastAPI], total=False):
     swagger_ui_parameters: dict[str, Any] | None
     separate_input_output_schemas: bool
     openapi_external_docs: dict[str, Any] | None
+
+
+class LogfireConfiguration(TypedDict, extra_items=Any, total=False):
+    local: bool
+    send_to_logfire: bool | Literal["if-token-present"] | None
+    token: str | list[str] | None
+    api_key: str | None
+    service_name: str | None
+    service_version: str | None
+    environment: str | None
+    resource_attributes: Mapping[str, Any] | None
+    console: logfire.ConsoleOptions | Literal[False] | None
+    config_dir: pathlib.Path | str | None
+    data_dir: pathlib.Path | str | None
+    additional_span_processors: Sequence[SpanProcessor] | None
+    metrics: logfire.MetricsOptions | Literal[False] | None
+    scrubbing: logfire.ScrubbingOptions | Literal[False] | None
+    inspect_arguments: bool | None
+    sampling: logfire.SamplingOptions | None
+    min_level: int | logfire.LevelName | None
+    add_baggage_to_attributes: bool
+    code_source: logfire.CodeSource | None
+    variables: logfire.VariablesOptions | logfire.LocalVariablesOptions | None
+    distributed_tracing: bool | None
+    advanced: logfire.AdvancedOptions | None

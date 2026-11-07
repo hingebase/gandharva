@@ -39,9 +39,10 @@ classifiers = [
 dependencies = [
     "beautifulsoup4[lxml] >=4.15.0,<5.0.0; python_version >= '3.12'",
     "distributed >=2026.1.1",
-    "fastapi >=0.119.1,<2.0.0",
+    "fastapi >=0.119.1,!=0.142.0,!=0.142.1,!=0.142.2,!=0.142.3,!=0.142.4,<2.0.0",
     "hypothesis-jsonschema >=0.23.1,<2.0.0",
     "kiss-headers >=2.4.0,<3.0.0; python_version >= '3.12'",
+    "logfire[fastapi] >=5.2.0,<6.0.0",
     "lumen >=0.6.1,<2.0.0",
     "lxml >=6.0.1,<7.0.0; python_version >= '3.12'",
     "netcdf4 >=1.7.3,<2.0.0",

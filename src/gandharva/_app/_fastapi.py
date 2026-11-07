@@ -20,7 +20,10 @@ import contextvars
 import dataclasses
 import functools
 import io
+import logging
+import os
 import sys
+import types
 import weakref
 from collections.abc import (
     AsyncGenerator,
@@ -35,6 +38,7 @@ from typing import Annotated, Literal, no_type_check
 
 import anyio.lowlevel
 import fastapi.middleware.cors
+import logfire
 import matplotlib as mpl
 import panel as pn
 import starlette.exceptions
@@ -48,7 +52,7 @@ from typing_extensions import Any, NamedTuple, Self, final, overload, override
 import gandharva as gd
 from gandharva import _convert, _utils
 
-from . import _pydantic
+from . import _base, _pydantic
 
 if sys.version_info >= (3, 12):
     import bs4
@@ -61,14 +65,15 @@ if sys.version_info >= (3, 12):
         async def lifespan(
             self,
             app: fastapi.FastAPI,  # Store a reference once we need it
+            lf: logfire.Logfire | None = None,
         ) -> AsyncGenerator[None]:
-            _lifespan(app)
-            await self._ensure_started()
-            try:
-                yield
-            finally:
-                await self._panel_stop()
-                await self.core.stop()
+            async with _lifespan(app, lf):
+                await self._ensure_started()
+                try:
+                    yield
+                finally:
+                    await self._panel_stop()
+                    await self.core.stop()
 
         def middleware_factory(self, app: starlette.types.ASGIApp) -> Callable[
             ["asgi.Scope", "asgi.Receive", starlette.types.Send],
@@ -312,6 +317,30 @@ class App(_pydantic.App):
         return kwargs
 
     @classmethod
+    def fastapi_telemetry_params(
+        cls,
+        meta: Message,
+    ) -> gd.typing.LogfireConfiguration | None:
+        for name in os.environ:
+            if name.startswith("FASTAPI_OTEL_"):
+                return None
+            if name.startswith(("OTEL_", "LOGFIRE_")):
+                break
+        else:
+            return None
+        kwargs: gd.typing.LogfireConfiguration = {
+            "console": False,
+            "metrics": logfire.MetricsOptions(collect_in_spans=True),
+            "min_level": 1,
+            # https://pydantic.dev/docs/logfire/guides/alternative-backends/
+            "service_name": _base.normalize(meta.get("Name", "gandharva")),
+            "send_to_logfire": False,
+        }
+        if version := meta.get("Version"):
+            kwargs["service_version"] = version
+        return kwargs
+
+    @classmethod
     def fastapi_post_init(
         cls,
         router: fastapi.APIRouter | fastapi.FastAPI,
@@ -364,7 +393,7 @@ class App(_pydantic.App):
             meta = Message()
         asgi = None
         kwargs = cls.fastapi_app_params(
-            lambda app: asgi.lifespan(app) if asgi else _lifespan(app),
+            lambda app: asgi.lifespan(app, lf) if asgi else _lifespan(app, lf),
             meta,
         )
         app = fastapi.FastAPI(**kwargs)
@@ -389,6 +418,13 @@ class App(_pydantic.App):
                 allow_origins=allow_origins,
                 allow_methods=allow_methods,
             )
+        kwargs = cls.fastapi_telemetry_params(meta)
+        if kwargs is None:
+            lf = None
+        else:
+            lf = logfire.configure(**kwargs)
+            # Must be called before lifespan startup
+            lf.instrument_fastapi(app)
         return app
 
     def _fastapi_main(self) -> object:
@@ -464,15 +500,39 @@ def get_lock() -> RLock:
     return _locks[token.native_token]
 
 
+@dataclasses.dataclass
+class _Lifespan(contextlib.AbstractAsyncContextManager[None, None]):
+    handler: logging.Handler
+
+    @override
+    async def __aenter__(self) -> None:
+        pass
+
+    @override
+    async def __aexit__(
+        self,
+        exc_type: type[BaseException] | None,
+        exc_value: BaseException | None,
+        traceback: types.TracebackType | None,
+        /,
+    ) -> None:
+        logging.getLogger("_gandharva").removeHandler(self.handler)
+
+
 def _content_length_header(body: bytes) -> tuple[bytes, bytes]:
     return b"content-length", b"%d" % len(body)
 
 
-def _lifespan(_: fastapi.FastAPI) -> contextlib.nullcontext[None]:
+def _lifespan(
+    _: fastapi.FastAPI,
+    lf: logfire.Logfire | None = None,
+) -> contextlib.AbstractAsyncContextManager[None, None]:
     mpl.use("agg")
     token = anyio.lowlevel.current_token().native_token
     if token not in _locks:
         _locks[token] = RLock()
+    if handler := _setup_notifications(lf):
+        return _Lifespan(handler)
     return _noop
 
 
@@ -484,6 +544,26 @@ def _serialize(pane: pn.viewable.Viewable) -> bytes:
     with io.BytesIO() as f:
         pane.save(f, resources=INLINE if pn.config.inline else CDN)  # pyright: ignore[reportUnknownMemberType]
         return f.getvalue()
+
+
+def _setup_notifications(lf: logfire.Logfire | None) -> logging.Handler | None:
+    logger = logging.getLogger("_gandharva")
+    logger.propagate = False
+    if not lf:
+        if not logger.hasHandlers():
+            logger.addHandler(logging.NullHandler())
+        return None
+    for handler in logger.handlers:
+        if isinstance(handler, logfire.LogfireLoggingHandler):
+            return None
+    handler = logfire.LogfireLoggingHandler(
+        fallback=logging.NullHandler(),
+        logfire_instance=lf,
+    )
+    logger.addHandler(handler)
+    if not logger.level:
+        logger.setLevel(logging.INFO)
+    return handler
 
 
 async def _unexpected_receive() -> dict[str, Any]:  # ruff: ignore[unused-async]
