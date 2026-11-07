@@ -202,15 +202,18 @@ class App(_base.App):
             pydantic_settings.CliApp.run_subcommand(model)
             return
         self = cast("gd.Gandharva", cls(run_mode="cli"))
+        handler = None
         try:
             with self.from_pydantic(model):
                 hvplot.extension("matplotlib")
-                _setup_notifications()
+                handler = _setup_notifications()
                 result = self.main()
             _convert.to_cli(result, self, json=model.json_)
         finally:
             if testing.TESTING:
                 hvplot.extension("bokeh")
+                if handler:
+                    logging.getLogger("_gandharva").removeHandler(handler)
 
     @classmethod
     def _pydantic_cli_extra_sources(
@@ -406,7 +409,7 @@ def _reserved() -> frozenset[str]:
     )
 
 
-def _setup_notifications() -> None:
+def _setup_notifications() -> logging.Handler | None:
     logger = logging.getLogger("_gandharva")
     if (
         isinstance(sys.stdout, io.TextIOBase)
@@ -424,5 +427,6 @@ def _setup_notifications() -> None:
     for existing in filter(pred, logger.handlers):
         level = existing.level
         if not level or logger.isEnabledFor(level):
-            return
+            return None
     logger.addHandler(handler)
+    return handler
