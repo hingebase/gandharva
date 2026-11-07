@@ -118,6 +118,7 @@ class _GUI(pydantic_settings.BaseSettings):
     ] = 300
 
     def serve(self, panels: dict[str, Any]) -> None:
+        pn.extension(notifications=True)
         pn.serve(  # pyright: ignore[reportUnknownMemberType]
             panels,
             self.port,
