@@ -17,6 +17,7 @@ __all__ = ["App", "get_lock"]
 import asyncio
 import contextlib
 import inspect
+import logging
 import math
 import weakref
 from collections.abc import Callable, Iterable, Mapping
@@ -36,7 +37,7 @@ from matplotlib.image import _ImageBase  # pyright: ignore[reportPrivateUsage]  
 from typing_extensions import Any, TypeVar, Unpack, final, override
 
 import gandharva as gd
-from gandharva import _convert
+from gandharva import _convert, _utils, testing
 
 from . import _base, _pydantic
 
@@ -219,8 +220,13 @@ class App(_pydantic.App):
             ):
                 self.panel_request = cast("HTTPServerRequest", request)
         with self.from_pydantic(data), self.auto_plotting_backend():
-            result = self.main()
-            return _convert.to_panel(result, cls, *args)
+            handler = _setup_notifications()
+            try:
+                result = self.main()
+                return _convert.to_panel(result, cls, *args)
+            finally:
+                if testing.TESTING and handler:
+                    logging.getLogger("_gandharva").removeHandler(handler)
 
     @classmethod
     def _panel_update(
@@ -236,6 +242,8 @@ class App(_pydantic.App):
             stack.enter_context(submit.param.update(disabled=True))
             if page:
                 stack.enter_context(page.param.update(busy=True))
+            if notification_area := pn.state.notifications:
+                notification_area.clear()
             try:
                 result = cls._panel_main(loop, *args, clicked=clicked)
             except Exception as e:  # ruff: ignore[blind-except]
@@ -246,6 +254,31 @@ class App(_pydantic.App):
 
 def get_lock(loop: asyncio.AbstractEventLoop) -> RLock:
     return _locks[loop]
+
+
+class _NotificationHandler(logging.Handler):
+    @override
+    def emit(self, record: logging.LogRecord) -> None:
+        notification_area = pn.state.notifications
+        if not notification_area:
+            logger = logging.getLogger("gandharva")
+            logger.warning("Notification area is unavailable")
+            return
+        level = record.levelno
+        if level >= logging.ERROR:
+            method = notification_area.error  # pyright: ignore[reportUnknownMemberType, reportUnknownVariableType]
+        elif level >= logging.WARNING:
+            method = notification_area.warning  # pyright: ignore[reportUnknownMemberType, reportUnknownVariableType]
+        elif level < logging.INFO:
+            return
+        elif _utils.is_success(level):
+            method = notification_area.success  # pyright: ignore[reportUnknownMemberType, reportUnknownVariableType]
+        else:
+            method = notification_area.info  # pyright: ignore[reportUnknownMemberType, reportUnknownVariableType]
+        method(
+            record.getMessage(),
+            getattr(record, "gandharva.gui.duration", 3000),
+        )
 
 
 class _Sidebar(lumen.schema.JSONSchema):
@@ -441,6 +474,17 @@ def _pmui_pr_727(
     if helper_text := _helper_text(schema):
         kwargs["helper_text"] = _base.summary(helper_text)
     return widget_type, kwargs
+
+
+def _setup_notifications() -> _NotificationHandler | None:
+    logger = logging.getLogger("_gandharva")
+    logger.propagate = False
+    for handler in logger.handlers:
+        if isinstance(handler, _NotificationHandler):
+            return None
+    handler = _NotificationHandler()
+    logger.addHandler(handler)
+    return handler
 
 
 _locks = weakref.WeakKeyDictionary[asyncio.AbstractEventLoop, RLock]()

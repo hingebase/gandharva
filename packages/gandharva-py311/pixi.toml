@@ -19,8 +19,10 @@ distributed = { workspace = true }
 fastapi-core = { workspace = true }
 ffmpeg = { workspace = true }
 hypothesis-jsonschema = { workspace = true }
+logfire = { workspace = true }
 lumen = { workspace = true }
 netcdf4 = { workspace = true }
+opentelemetry-instrumentation-fastapi = { workspace = true }
 packaging = { workspace = true }
 pandera-xarray = { workspace = true }
 panel = ">=1.9.1,<1.10.0a0"

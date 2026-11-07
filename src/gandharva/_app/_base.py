@@ -18,7 +18,9 @@ import abc
 import contextlib
 import importlib.metadata
 import inspect
+import logging
 import os
+from collections.abc import Mapping
 from email.message import Message
 from typing import TYPE_CHECKING, ClassVar, Literal
 
@@ -29,6 +31,8 @@ import upath
 from typing_extensions import Any, TypeForm, final
 
 if TYPE_CHECKING:
+    from logging import _ExcInfoType  # pyright: ignore[reportPrivateUsage]
+
     import gandharva as gd
 
 
@@ -96,6 +100,114 @@ class App(abc.ABC):
     def __init__(self, run_mode: Literal["api", "cli", "gui"]) -> None:
         self.run_mode = run_mode
 
+    def debug(
+        self,
+        msg: object,
+        *args: object,
+        extra: Mapping[str, object] | None = None,
+    ) -> None:
+        del self
+        _logger.debug(msg, *args, stacklevel=2, extra=extra)
+
+    def info(
+        self,
+        msg: object,
+        *args: object,
+        gui_duration: int = 3000,
+        extra: Mapping[str, object] | None = None,
+    ) -> None:
+        if self.run_mode == "gui":
+            extra = _extra(gui_duration, extra)
+        _logger.info(msg, *args, stacklevel=2, extra=extra)
+
+    def success(
+        self,
+        msg: object,
+        *args: object,
+        gui_duration: int = 3000,
+        extra: Mapping[str, object] | None = None,
+    ) -> None:
+        if self.run_mode == "gui":
+            extra = _extra(gui_duration, extra)
+        _logger.log(25, msg, *args, stacklevel=2, extra=extra)
+
+    def warning(
+        self,
+        msg: object,
+        *args: object,
+        api_exc_info: "_ExcInfoType | None" = None,
+        gui_duration: int = 0,
+        extra: Mapping[str, object] | None = None,
+    ) -> None:
+        self._log(
+            logging.WARNING,
+            msg,
+            *args,
+            api_exc_info=api_exc_info,
+            gui_duration=gui_duration,
+            extra=extra,
+        )
+
+    def error(
+        self,
+        msg: object,
+        *args: object,
+        api_exc_info: "_ExcInfoType | None" = None,
+        gui_duration: int = 0,
+        extra: Mapping[str, object] | None = None,
+    ) -> None:
+        self._log(
+            logging.ERROR,
+            msg,
+            *args,
+            api_exc_info=api_exc_info,
+            gui_duration=gui_duration,
+            extra=extra,
+        )
+
+    def critical(
+        self,
+        msg: object,
+        *args: object,
+        api_exc_info: "_ExcInfoType | None" = None,
+        gui_duration: int = 0,
+        extra: Mapping[str, object] | None = None,
+    ) -> None:
+        self._log(
+            logging.CRITICAL,
+            msg,
+            *args,
+            api_exc_info=api_exc_info,
+            gui_duration=gui_duration,
+            extra=extra,
+        )
+
+    def _log(
+        self,
+        level: int,
+        msg: object,
+        *args: object,
+        api_exc_info: "_ExcInfoType | None" = None,
+        gui_duration: int = 0,
+        extra: Mapping[str, object] | None = None,
+    ) -> None:
+        match self.run_mode:
+            case "api":
+                exc_info = api_exc_info
+            case "cli":
+                exc_info = None
+            case "gui":
+                exc_info = None
+                extra = _extra(gui_duration, extra)
+        _logger.log(
+            level,
+            msg,
+            *args,
+            exc_info=exc_info,
+            stacklevel=3,
+            extra=extra,
+        )
+
 
 def normalize(name: str) -> str:
     return packaging.utils.canonicalize_name(
@@ -110,7 +222,19 @@ def summary(description: str) -> str:
     return description.split("\n", maxsplit=1)[0].rstrip(".").strip()
 
 
+def _extra(
+    duration: int,
+    extra: Mapping[str, object] | None,
+) -> dict[str, object]:
+    if not extra:
+        return {"gandharva.gui.duration": duration}
+    merged = dict(extra)
+    merged["gandharva.gui.duration"] = duration
+    return merged
+
+
 os.environ.setdefault(
     "HYPOTHESIS_STORAGE_DIRECTORY",
     platformdirs.user_cache_dir("gandharva", appauthor=False),
 )
+_logger = logging.getLogger("_gandharva")

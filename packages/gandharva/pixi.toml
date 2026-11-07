@@ -21,9 +21,11 @@ fastapi-core = { workspace = true }
 ffmpeg = { workspace = true }
 hypothesis-jsonschema = { workspace = true }
 kiss-headers = ">=2.4.0,<3.0.0"
+logfire = { workspace = true }
 lumen = { workspace = true }
 lxml = ">=6.0.1,<7.0.0"
 netcdf4 = { workspace = true }
+opentelemetry-instrumentation-fastapi = { workspace = true }
 packaging = { workspace = true }
 pandera-xarray = { workspace = true }
 panel = ">=1.10.0,<2.0.0"
