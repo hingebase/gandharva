@@ -157,8 +157,10 @@ class App(_base.App):
         try:
             yield
         finally:
-            with contextlib.suppress(Exception):  # TODO(): log the error in #4
+            try:
                 new_stack.close()
+            except Exception:
+                logging.getLogger("gandharva").exception("Cleanup error")
 
     def __init_subclass__(
         cls,

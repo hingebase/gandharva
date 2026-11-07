@@ -429,9 +429,17 @@ class App(_pydantic.App):
 
     def _fastapi_main(self) -> object:
         with self.auto_plotting_backend():
-            result = self.main()
-            return _convert.to_response(result, self)
-            # TODO(): #4
+            try:
+                result = self.main()
+                return _convert.to_response(result, self)
+            except _utils.ReturnThePanelWrappedInThisError:
+                raise
+            except starlette.exceptions.HTTPException:
+                raise
+            except Exception:  # TODO(): #19
+                logger = logging.getLogger("gandharva")
+                logger.exception("Application error")
+                return fastapi.Response(status_code=500)
 
     @classmethod
     def _fastapi_routes(

@@ -21,6 +21,7 @@ import functools
 import getpass
 import inspect
 import ipaddress
+import logging
 import pathlib
 import sys
 from collections.abc import Callable, Coroutine, Generator
@@ -155,8 +156,8 @@ class Gandharva(_fastapi.App, _panel.App):
         if info := _utils.undisplayable_info(plot, html=html):
             match self.run_mode:
                 case "api":
-                    # TODO(): log the error in #4
-                    raise fastapi.HTTPException(500)
+                    logging.getLogger("gandharva").error(info)
+                    raise fastapi.HTTPException(500)  # TODO(): #19
                 case "cli":
                     raise TypeError(info)
                 case "gui":
