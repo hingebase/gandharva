@@ -133,12 +133,12 @@ class _GUI(pydantic_settings.BaseSettings):
 
 class _Runner(pydantic_settings.BaseSettings):
     notification_level: Annotated[
-        Literal["debug", "info", "warning", "error", "critical"],
+        Literal["debug", "info", "success", "warning", "error", "critical"],
         gd.Field(description="Threshold of notifications to be emitted"),
     ] = "info"
 
     def cli_cmd(self) -> None:
-        level = getattr(logging, self.notification_level.upper())
+        level = getattr(logging, self.notification_level.upper(), 25)
         logging.getLogger("_gandharva").setLevel(level)
         pydantic_settings.CliApp.run_subcommand(self)
 

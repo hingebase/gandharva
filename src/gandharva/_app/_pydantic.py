@@ -39,7 +39,7 @@ from typing_extensions import Any, Unpack, override
 from typing_inspection import introspection
 
 import gandharva as gd
-from gandharva import _convert, testing
+from gandharva import _convert, _utils, testing
 
 from . import _base
 
@@ -368,14 +368,14 @@ class _CliAppBaseSettings(_CliAppBaseModel, BaseSettings):
 class _RichHandler(rich.logging.RichHandler):
     @override
     def get_level_text(self, record: logging.LogRecord) -> Text:
-        if _is_success(record):
+        if _utils.is_success(record.levelno):
             return Text.styled("SUCCESS ", "logging.level.debug")
         return super().get_level_text(record)
 
 
 class _Style(logging.PercentStyle):
     def _format(self, record: logging.LogRecord) -> str:
-        if _is_success(record):
+        if _utils.is_success(record.levelno):
             values = dict(record.__dict__, levelname="SUCCESS")
         else:
             values = record.__dict__
@@ -390,13 +390,6 @@ def _is_stream_handler(handler: logging.Handler) -> bool:
     return (
         isinstance(handler, logging.StreamHandler)
         and not isinstance(handler, logging.FileHandler)
-    )
-
-
-def _is_success(record: logging.LogRecord) -> bool:
-    return (
-        record.levelno == logging.INFO
-        and getattr(record, "success", False) is True
     )
 
 
