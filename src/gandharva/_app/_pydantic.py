@@ -379,6 +379,17 @@ class _Style(logging.PercentStyle):
         return self._fmt % values
 
 
+def _is_rich_handler(handler: logging.Handler) -> bool:
+    return isinstance(handler, rich.logging.RichHandler)
+
+
+def _is_stream_handler(handler: logging.Handler) -> bool:
+    return (
+        isinstance(handler, logging.StreamHandler)
+        and not isinstance(handler, logging.FileHandler)
+    )
+
+
 def _is_success(record: logging.LogRecord) -> bool:
     return (
         record.levelno == logging.INFO
@@ -402,15 +413,16 @@ def _setup_notifications() -> None:
         and sys.stdout.isatty()
         and not rich.console.detect_legacy_windows()
     ):
+        pred = _is_rich_handler
         handler = _RichHandler(log_time_format="[%Y-%m-%d %X]")
     else:
+        pred = _is_stream_handler
         handler = logging.StreamHandler()
         formatter = logging.Formatter(datefmt="%Y-%m-%d %X")
         formatter._style = _Style("[%(asctime)s] %(levelname)-8s %(message)s")  # ruff: ignore[private-member-access]
         handler.setFormatter(formatter)
-    for existing in logger.handlers:
-        if type(existing) is type(handler):
-            level = existing.level
-            if not level or logger.isEnabledFor(level):
-                return
+    for existing in filter(pred, logger.handlers):
+        level = existing.level
+        if not level or logger.isEnabledFor(level):
+            return
     logger.addHandler(handler)
