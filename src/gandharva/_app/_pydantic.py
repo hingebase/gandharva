@@ -404,6 +404,7 @@ def _reserved() -> frozenset[str]:
 
 def _setup_notifications() -> logging.Handler | None:
     logger = logging.getLogger("_gandharva")
+    logger.propagate = False
     if (
         isinstance(sys.stdout, io.TextIOBase)
         and sys.stdout.isatty()
