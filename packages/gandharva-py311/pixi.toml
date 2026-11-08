@@ -41,3 +41,7 @@ zarr = { workspace = true }
 
 [package.run-constraints]
 numcodecs = { workspace = true }
+"pdfminer.six" = { workspace = true }
+pdfplumber = { workspace = true }
+pycairo = { workspace = true }
+pygobject = { workspace = true }

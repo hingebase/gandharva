@@ -38,3 +38,7 @@ textual-image = { workspace = true }
 typing-extensions = { workspace = true }
 universal-pathlib = { workspace = true }
 zarr = { workspace = true }
+
+[package.run-constraints]
+"pdfminer.six" = { workspace = true }
+pdfplumber = { workspace = true }

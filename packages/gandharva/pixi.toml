@@ -43,4 +43,9 @@ universal-pathlib = { workspace = true }
 zarr = { workspace = true }
 
 [package.run-constraints]
+azure-identity = ">=1.25.2"
 numcodecs = { workspace = true }
+"pdfminer.six" = { workspace = true }
+pdfplumber = { workspace = true }
+pycairo = { workspace = true }
+pygobject = { workspace = true }
