@@ -1,5 +1,5 @@
 # This should match the minimum supported Pixi version
-#:schema https://pixi.prefix.dev/v0.71.0/schema/manifest/schema.json
+#:schema https://pixi.prefix.dev/v0.84.1/schema/manifest/schema.json
 
 [workspace]
 channels = ["conda-forge"]
@@ -12,7 +12,7 @@ platforms = [
     "win-64",
 ]
 preview = ["pixi-build"]
-requires-pixi = ">=0.71.0"
+requires-pixi = ">=0.84.1"
 
 [workspace.dependencies]
 distributed = ">=2026.1.1"
@@ -20,7 +20,6 @@ fastapi-core = ">=0.119.1,!=0.142.0,!=0.142.1,!=0.142.2,!=0.142.3,!=0.142.4,<2.0
 ffmpeg = ">=4.4.2"
 hypothesis-jsonschema = ">=0.23.1,<2.0.0"
 logfire = ">=5.2.0,<6.0.0"
-lumen = ">=0.6.1,<2.0.0"
 netcdf4 = ">=1.7.3,<2.0.0"
 numcodecs = { version = "<=0.16.5", when = "__osx 10.15.*" }
 opentelemetry-instrumentation-fastapi = ">=0.42b0"
@@ -94,6 +93,7 @@ gandharva = { path = "packages/gandharva" }
 python-gil = "3.13.*"
 
 [feature.py314]
+channels = ["conda-forge", "conda-pypi"]
 platforms = [
     "linux-64",
     "linux-aarch64",
@@ -105,6 +105,9 @@ platforms = [
 [feature.py314.dependencies]
 gandharva = { path = "packages/gandharva" }
 python-gil = "3.14.*"
+
+[feature.py314.target.osx-64.dependencies]
+markitdown = { channel = "conda-pypi" }
 
 [feature.tests]
 channels = ["conda-forge", "https://prefix.dev/github-releases"]

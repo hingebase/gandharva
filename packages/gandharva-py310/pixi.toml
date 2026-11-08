@@ -1,8 +1,8 @@
-#:schema https://pixi.prefix.dev/v0.71.0/schema/manifest/schema.json
+#:schema https://pixi.prefix.dev/v0.84.1/schema/manifest/schema.json
 
 [package.build.backend]
 name = "pixi-build-python"
-version = ">=0.6.0,<0.9.0"
+version = ">=0.8.6,<0.9.0"
 channels = ["https://prefix.dev/hingebase/catalina-backports"]
 
 [package.build.config]
@@ -20,7 +20,7 @@ fastapi-core = { workspace = true }
 ffmpeg = { workspace = true }
 hypothesis-jsonschema = { workspace = true }
 logfire = { workspace = true }
-lumen = { workspace = true }
+lumen = ">=0.10.1,<2.0.0"
 netcdf4 = { workspace = true }
 opentelemetry-instrumentation-fastapi = { workspace = true }
 packaging = { workspace = true }
