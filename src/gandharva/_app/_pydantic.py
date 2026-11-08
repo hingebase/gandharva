@@ -214,8 +214,7 @@ class App(_base.App):
         finally:
             if testing.TESTING:
                 hvplot.extension("bokeh")
-                if handler:
-                    logging.getLogger("_gandharva").removeHandler(handler)
+                testing.reset_logger(handler)
 
     @classmethod
     def _pydantic_cli_extra_sources(

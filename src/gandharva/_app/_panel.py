@@ -225,8 +225,8 @@ class App(_pydantic.App):
                 result = self.main()
                 return _convert.to_panel(result, cls, *args)
             finally:
-                if testing.TESTING and handler:
-                    logging.getLogger("_gandharva").removeHandler(handler)
+                if testing.TESTING:
+                    testing.reset_logger(handler)
 
     @classmethod
     def _panel_update(

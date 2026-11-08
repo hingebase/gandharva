@@ -34,6 +34,7 @@ class _CheckLoggingState(
     def __enter__(self) -> None:
         assert not _logger.level
         assert _logger.getEffectiveLevel() == logging.WARNING
+        assert _logger.propagate
 
     @override
     def __exit__(

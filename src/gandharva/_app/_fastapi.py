@@ -51,7 +51,7 @@ from pydantic_core import Url
 from typing_extensions import Any, NamedTuple, Self, final, overload, override
 
 import gandharva as gd
-from gandharva import _convert, _utils
+from gandharva import _convert, _utils, testing
 
 from . import _base, _pydantic
 
@@ -526,7 +526,10 @@ class _Lifespan(contextlib.AbstractAsyncContextManager[None, None]):
         /,
     ) -> None:
         handler = self.handler
-        logging.getLogger("_gandharva").removeHandler(handler)
+        if testing.TESTING:
+            testing.reset_logger(handler)
+        else:
+            logging.getLogger("_gandharva").removeHandler(handler)
         await anyio.to_thread.run_sync(handler.logfire_instance.shutdown)
 
 
@@ -544,7 +547,7 @@ def _lifespan(
         _locks[token] = RLock()
     if handler := _setup_notifications(lf):
         return _Lifespan(handler)
-    return _noop
+    return testing.reset_logger if testing.TESTING else _noop
 
 
 def _panel() -> pn.viewable.Viewable:
