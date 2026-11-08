@@ -89,7 +89,7 @@ def _(value: hv.core.Dimensioned, app: Gandharva) -> None:
 def _(value: animation.TimedAnimation, app: Gandharva) -> None:
     ffplay = shutil.which("ffplay", path=_ffplay_path())
     if not ffplay:
-        rich.print(  # TODO(): #4
+        app.error(
             "Please install FFmpeg and expose the executables 'ffmpeg', "
             "'ffplay' via PATH or "
             "matplotlib.rcParams['animation.ffmpeg_path']",

@@ -23,6 +23,7 @@ __all__ = [
     "FastAPIParameters",
     "HTMLParameters",
     "JSONSchemaParameters",
+    "LogfireConfiguration",
     "MarkdownParameters",
     "MatplotlibParameters",
     "PageParameters",
@@ -32,6 +33,7 @@ from ._fastapi import (
     APIRouteParameters,
     APIRouterParameters,
     FastAPIParameters,
+    LogfireConfiguration,
 )
 from ._panel import (
     ButtonParameters,

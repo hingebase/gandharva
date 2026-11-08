@@ -21,8 +21,9 @@ e.g. `uvicorn --factory module_name:AppName`
 __all__ = ["run"]
 
 import importlib
+import logging
 import sys
-from typing import Annotated
+from typing import Annotated, Literal
 
 import panel as pn
 import pydantic
@@ -117,6 +118,7 @@ class _GUI(pydantic_settings.BaseSettings):
     ] = 300
 
     def serve(self, panels: dict[str, Any]) -> None:
+        pn.extension(notifications=True)
         pn.serve(  # pyright: ignore[reportUnknownMemberType]
             panels,
             self.port,
@@ -131,7 +133,14 @@ class _GUI(pydantic_settings.BaseSettings):
 
 
 class _Runner(pydantic_settings.BaseSettings):
+    notification_level: Annotated[
+        Literal["debug", "info", "success", "warning", "error", "critical"],
+        gd.Field(description="Threshold of notifications to be emitted"),
+    ] = "info"
+
     def cli_cmd(self) -> None:
+        level = getattr(logging, self.notification_level.upper(), 25)
+        logging.getLogger("_gandharva").setLevel(level)
         pydantic_settings.CliApp.run_subcommand(self)
 
     @classmethod

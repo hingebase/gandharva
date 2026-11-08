@@ -12,10 +12,27 @@
 # implied. See the License for the specific language governing
 # permissions and limitations under the License.
 
-"""Prevent textual-image from detecting Sixel support."""
+"""Shared fixtures."""
 
 import contextlib
 import os
+import socket
+
+import pytest
+
+
+@pytest.fixture
+def server_port() -> int:
+    """Find an available port.
+
+    Returns:
+        The port number.
+
+    """
+    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
+        sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        sock.bind(("127.0.0.1", 0))
+        return sock.getsockname()[1]
 
 
 class _DisableStdout(contextlib.redirect_stdout[None]):

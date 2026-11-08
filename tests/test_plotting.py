@@ -205,8 +205,11 @@ def test_embeddable_html_api(subtests: pytest.Subtests) -> None:
 @_check_fresh
 def test_dynamic_map_fallback_api() -> None:
     """DynamicMaps are forbidden in API mode."""
-    with TestClient(_DynamicMap()) as client, pytest.raises(TypeError):
-        client.get("/")
+    with (
+        TestClient(_DynamicMap()) as client,
+        pytest.raises(httpx2.HTTPStatusError),
+    ):
+        client.get("/").raise_for_status()
 
 
 @_check_fresh

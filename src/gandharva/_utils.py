@@ -14,6 +14,7 @@
 
 __all__ = [
     "ReturnThePanelWrappedInThisError",
+    "is_success",
     "isclass",
     "undisplayable_info",
     "unreachable",
@@ -46,6 +47,9 @@ _T = TypeVar("_T", bound=pn.viewable.Viewable, default=pn.viewable.Viewable)
 @dataclasses.dataclass
 class ReturnThePanelWrappedInThisError(Exception, Generic[_T]):
     obj: _T
+
+
+is_success = (25).__eq__  # loguru
 
 
 def undisplayable_info(obj: hv.core.Dimensioned, *, html: bool = False) -> str:

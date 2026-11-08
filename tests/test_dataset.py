@@ -19,7 +19,6 @@ import contextlib
 import functools
 import http.server
 import pathlib
-import socket
 import tempfile
 import threading
 import time
@@ -41,20 +40,6 @@ from typing_extensions import Any, TypeVarTuple, Unpack, override
 import gandharva as gd
 
 _Ts = TypeVarTuple("_Ts")
-
-
-@pytest.fixture
-def server_port() -> int:
-    """Find an available port.
-
-    Returns:
-        The port number.
-
-    """
-    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
-        sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-        sock.bind(("127.0.0.1", 0))
-        return sock.getsockname()[1]
 
 
 def test_default_protection() -> None:

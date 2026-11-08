@@ -14,9 +14,39 @@
 
 """Test only: not for external use."""
 
-__all__ = ["TESTING", "BytesIO"]
+__all__ = ["TESTING", "BytesIO", "reset_logger"]
 
+import contextlib
+import logging
 import os
+import types
 from io import BytesIO
 
+from typing_extensions import override
+
 TESTING = "PYTEST_VERSION" in os.environ
+
+
+class _ResetLogger(contextlib.AbstractAsyncContextManager[None, None]):
+    @override
+    async def __aenter__(self) -> None:
+        pass
+
+    @override
+    async def __aexit__(
+        self,
+        exc_type: type[BaseException] | None,
+        exc_value: BaseException | None,
+        traceback: types.TracebackType | None,
+        /,
+    ) -> None:
+        self()
+
+    def __call__(self, handler: logging.Handler | None = None) -> None:
+        logger = logging.getLogger("_gandharva")
+        logger.propagate = True
+        if handler:
+            logger.removeHandler(handler)
+
+
+reset_logger = _ResetLogger()
