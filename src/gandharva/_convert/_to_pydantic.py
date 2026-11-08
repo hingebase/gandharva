@@ -20,6 +20,7 @@ from typing import cast, get_origin
 import upath
 import xarray as xr
 from pydantic.fields import FieldInfo
+from typing_extensions import assert_never
 
 import gandharva as gd
 
@@ -33,6 +34,8 @@ def to_pydantic_field(source: FieldInfo) -> FieldInfo:
     elif isinstance(ann, type):
         if issubclass(ann, xr.Dataset):
             return _xarray_to_upath(source)
+        if False:  # More types may be added in the future
+            assert_never(ann)
     return source
 
 

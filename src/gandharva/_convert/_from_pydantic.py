@@ -29,7 +29,7 @@ import pydantic.fields
 import pydantic_core
 import xarray as xr
 from packaging.version import Version
-from typing_extensions import Any, Protocol, override
+from typing_extensions import Any, Protocol, assert_never, override
 from upath import UPath
 
 
@@ -63,6 +63,8 @@ def from_pydantic_field(
     elif isinstance(ann, type):
         if issubclass(ann, xr.Dataset):
             return _upath_to_xarray(source, validator)
+        if False:  # More types may be added in the future
+            assert_never(ann)
     return source, None
 
 
