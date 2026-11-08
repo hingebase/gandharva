@@ -37,6 +37,7 @@ from email.message import Message
 from typing import Annotated, Literal, no_type_check
 
 import anyio.lowlevel
+import anyio.to_thread
 import fastapi.middleware.cors
 import logfire
 import matplotlib as mpl
@@ -510,7 +511,7 @@ def get_lock() -> RLock:
 
 @dataclasses.dataclass
 class _Lifespan(contextlib.AbstractAsyncContextManager[None, None]):
-    handler: logging.Handler
+    handler: logfire.LogfireLoggingHandler
 
     @override
     async def __aenter__(self) -> None:
@@ -524,7 +525,9 @@ class _Lifespan(contextlib.AbstractAsyncContextManager[None, None]):
         traceback: types.TracebackType | None,
         /,
     ) -> None:
-        logging.getLogger("_gandharva").removeHandler(self.handler)
+        handler = self.handler
+        logging.getLogger("_gandharva").removeHandler(handler)
+        await anyio.to_thread.run_sync(handler.logfire_instance.shutdown)
 
 
 def _content_length_header(body: bytes) -> tuple[bytes, bytes]:
@@ -554,7 +557,9 @@ def _serialize(pane: pn.viewable.Viewable) -> bytes:
         return f.getvalue()
 
 
-def _setup_notifications(lf: logfire.Logfire | None) -> logging.Handler | None:
+def _setup_notifications(
+    lf: logfire.Logfire | None,
+) -> logfire.LogfireLoggingHandler | None:
     logger = logging.getLogger("_gandharva")
     logger.propagate = False
     if not lf:
