@@ -17,6 +17,7 @@
 import contextlib
 import os
 import socket
+import sys
 
 import pytest
 
@@ -35,13 +36,14 @@ def server_port() -> int:
         return sock.getsockname()[1]
 
 
-class _DisableStdout(contextlib.redirect_stdout[None]):
-    _stream = "__stdout__"
+if sys.platform == "win32" and sys.version_info < (3, 12):
+    # https://github.com/lnqs/textual-image/pull/163
+    class _DisableStdout(contextlib.redirect_stdout[None]):
+        _stream = "__stdout__"
 
-
-with _DisableStdout(None):
-    from textual_image import renderable
-del renderable
+    with _DisableStdout(None):
+        from textual_image import renderable
+    del renderable
 
 for key in list(os.environ):
     if key.startswith(("BOKEH_", "PANEL_")):

@@ -34,7 +34,7 @@ python-gil = "3.10.*"
 rich = { workspace = true }
 rich-argparse = { workspace = true }
 sdl2 = { workspace = true }
-textual-image = { workspace = true }
+textual-image = ">=0.8.5,<2.0.0"
 typing-extensions = { workspace = true }
 universal-pathlib = { workspace = true }
 zarr = { workspace = true }
