@@ -22,6 +22,7 @@ import mimetypes
 import os
 import subprocess  # ruff: ignore[suspicious-subprocess-import]
 import sys
+import threading
 import types
 import warnings
 from collections.abc import Callable, Generator, Iterator
@@ -42,6 +43,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import panel as pn
+import panel_material_ui as pmui
 import PIL.Image
 import pydantic_settings
 import pytest
@@ -219,11 +221,18 @@ def test_dynamic_map_cli() -> None:
         pydantic_settings.CliApp.run(_DynamicMap.to_cli(), cli_args=[])
 
 
-@pytest.mark.xfail(raises=NotImplementedError)
 @_check_fresh
 def test_dynamic_map_gui() -> None:
     """DynamicMaps are allowed in GUI mode."""
-    raise NotImplementedError
+    class App(_DynamicMap):
+        @override
+        def main(self) -> hv.DynamicMap:
+            dynamicmap = super().main()
+            event.set()
+            return dynamicmap
+
+    event = threading.Event()
+    _check_gui_content(App, event, pn.pane.HoloViews)
 
 
 @_check_fresh
@@ -291,11 +300,18 @@ def test_image_cli(monkeypatch: pytest.MonkeyPatch) -> None:
         _check_image_integrity(f)
 
 
-@pytest.mark.xfail(raises=NotImplementedError)
 @_check_fresh
 def test_image_gui() -> None:
     """Figures should be converted to images in GUI mode."""
-    raise NotImplementedError
+    class App(_Figure):
+        @override
+        def main(self) -> mfigure.Figure:
+            fig = super().main()
+            event.set()
+            return fig
+
+    event = threading.Event()
+    _check_gui_content(App, event, pn.pane.Matplotlib)
 
 
 @_check_fresh
@@ -354,11 +370,18 @@ def test_video_cli() -> None:
     pydantic_settings.CliApp.run(_Main.to_cli(), cli_args=["holo-map"])
 
 
-@pytest.mark.xfail(raises=NotImplementedError)
 @_check_fresh
 def test_video_gui() -> None:
     """Animations should be converted to videos in GUI mode."""
-    raise NotImplementedError
+    class App(_Animation):
+        @override
+        def main(self) -> matplotlib.animation.FuncAnimation:
+            anim = super().main()
+            event.set()
+            return anim
+
+    event = threading.Event()
+    _check_gui_content(App, event, pn.pane.Video)
 
 
 class _EnsureCalled(Generic[_P]):
@@ -540,6 +563,18 @@ def _check_current_backend(app: gd.Gandharva) -> None:
             assert hv.Store.current_backend == "matplotlib"
         case _:
             assert hv.Store.current_backend == "bokeh"
+
+
+def _check_gui_content(
+    app: type[gd.Gandharva],
+    event: threading.Event,
+    expected: type[pn.viewable.Viewable],
+) -> None:
+    page = app.__panel__()
+    [submit] = page.select(pmui.Button)
+    submit.param.trigger("value")
+    assert event.wait(60)
+    assert page.select(expected)
 
 
 def _check_html_integrity(response: httpx2.Response) -> None:

@@ -40,7 +40,7 @@ from typing_extensions import Any, ParamSpec, TypeVar, disjoint_base, override
 from upath import UPath
 
 import gandharva as gd
-from gandharva import _convert, _utils
+from gandharva import _convert, _utils, testing
 from gandharva._typing import HoloVizTypes
 
 from . import _base, _fastapi, _panel
@@ -106,7 +106,12 @@ class Gandharva(_fastapi.App, _panel.App):
                 raise ValueError(message)
             case "gui":
                 lock = _panel.get_lock(self.panel_event_loop)
-                owner = self.panel_request
+                try:
+                    owner = self.panel_request
+                except AttributeError:
+                    if not testing.TESTING:
+                        raise
+                    owner = object()
         self.syncify(lock.acquire)(owner)
         try:
             current = hv.Store.current_backend

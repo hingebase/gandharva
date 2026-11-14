@@ -15,10 +15,11 @@
 """Test calling coroutine functions."""
 
 import asyncio
+import threading
 
 import fastapi.testclient
+import panel_material_ui as pmui
 import pydantic_settings
-import pytest
 from typing_extensions import override
 
 import gandharva as gd
@@ -35,10 +36,18 @@ def test_syncify_cli() -> None:
     pydantic_settings.CliApp.run(_App.to_cli(), cli_args=[])
 
 
-@pytest.mark.xfail(raises=NotImplementedError)
 def test_syncify_gui() -> None:
     """Call coroutine functions in GUI mode."""
-    raise NotImplementedError
+    class App(_App):
+        @override
+        def main(self) -> None:
+            super().main()
+            event.set()  # Unreachable if main() raises an exception
+
+    event = threading.Event()
+    [submit] = App.__panel__().select(pmui.Button)
+    submit.param.trigger("value")
+    assert event.wait(60)
 
 
 class _App(gd.Gandharva):
