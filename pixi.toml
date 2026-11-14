@@ -65,10 +65,10 @@ uv = ">=0.10.2"
 uvicorn = ">=0.38.0"
 
 [environments]
-default = ["py311", "catalina", "pydantic-core", "tests"]
+default = ["py311", "catalina", "lumen", "pydantic-core", "tests"]
 py310 = ["py310", "catalina"]
-py313 = ["py313", "catalina", "panel", "pydantic-core"]
-py314 = ["py314", "panel"]
+py313 = ["py313", "catalina", "lumen", "panel", "pydantic-core"]
+py314 = ["py314", "lumen", "panel"]
 
 [feature.catalina]
 platforms = [
@@ -78,6 +78,12 @@ platforms = [
     "osx-arm64-macos-11-0",
     "win-64",
 ]
+
+[feature.lumen]
+channels = ["pyviz"]
+
+[feature.lumen.dependencies]
+lumen = { channel = "pyviz" }
 
 [feature.panel]
 channels = ["pyviz", "pyviz/label/dev"]
