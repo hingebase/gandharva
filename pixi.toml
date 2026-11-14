@@ -1,5 +1,5 @@
 # This should match the minimum supported Pixi version
-#:schema https://pixi.prefix.dev/v0.71.0/schema/manifest/schema.json
+#:schema https://pixi.prefix.dev/v0.84.1/schema/manifest/schema.json
 
 [workspace]
 channels = ["conda-forge"]
@@ -12,26 +12,31 @@ platforms = [
     "win-64",
 ]
 preview = ["pixi-build"]
-requires-pixi = ">=0.71.0"
+requires-pixi = ">=0.84.1"
 
 [workspace.dependencies]
+basedpyright = ">=1.40.2"
 distributed = ">=2026.1.1"
 fastapi-core = ">=0.119.1,!=0.142.0,!=0.142.1,!=0.142.2,!=0.142.3,!=0.142.4,<2.0.0"
-ffmpeg = ">=4.4.2"
+ffmpeg = ">=7.1.0"
 hypothesis-jsonschema = ">=0.23.1,<2.0.0"
 logfire = ">=5.2.0,<6.0.0"
-lumen = ">=0.6.1,<2.0.0"
 netcdf4 = ">=1.7.3,<2.0.0"
 numcodecs = { version = "<=0.16.5", when = "__osx 10.15.*" }
 opentelemetry-instrumentation-fastapi = ">=0.42b0"
 packaging = ">=26.0.0"
 pandera-xarray = ">=0.32.1,<2.0.0"
 panel-material-ui = ">=0.13.0,<2.0.0"
+"pdfminer.six" = { version = "==20260107", build = "pyhd8ed1ab_1" }
+pdfplumber = { version = "==0.11.10", build = "pyhcf101f3_1" }
 platformdirs = ">=4.6.0,<5.0.0"
+pycairo = { version = "<=1.26.1", when = "__unix" }
+pygobject = { version = "<=3.48.2", when = "__unix" }
 rich = ">=14.2.0"
 rich-argparse = ">=1.7.2,<2.0.0"
+ruff = ">=0.17.5"
 sdl2 = { version = "<=2.30.10", when = "__osx 10.15.*" }
-textual-image = ">=0.8.5,!=0.9.0,!=0.10.0,!=0.11.0,!=0.12.0,!=0.13.0,!=0.13.1,<2.0.0"
+tombi = ">=1.11.2"
 typing-extensions = ">=4.15.0,<5.0.0"
 universal-pathlib = ">=0.3.10,<2.0.0"
 uv = ">=0.10.2,<0.14.0"
@@ -60,13 +65,10 @@ uv = ">=0.10.2"
 uvicorn = ">=0.38.0"
 
 [environments]
-default = ["py311", "basedpyright", "catalina", "pydantic-core", "tests"]
+default = ["py311", "catalina", "lumen", "pydantic-core", "tests"]
 py310 = ["py310", "catalina"]
-py313 = ["py313", "basedpyright", "catalina", "pydantic-core"]
-py314 = ["py314", "basedpyright"]
-
-[feature.basedpyright.dependencies]
-basedpyright = ">=1.40.2"
+py313 = ["py313", "catalina", "lumen", "panel", "pydantic-core"]
+py314 = ["py314", "lumen", "panel"]
 
 [feature.catalina]
 platforms = [
@@ -76,6 +78,19 @@ platforms = [
     "osx-arm64-macos-11-0",
     "win-64",
 ]
+
+[feature.lumen]
+channels = ["pyviz"]
+
+[feature.lumen.dependencies]
+lumen = { channel = "pyviz" }
+
+[feature.panel]
+channels = ["pyviz", "pyviz/label/dev"]
+
+[feature.panel.dependencies]
+panel = { channel = "pyviz/label/dev" }
+panel-material-ui = { channel = "pyviz" }
 
 [feature.pydantic-core]
 channels = ["https://prefix.dev/hingebase/gandharva"]
@@ -87,13 +102,16 @@ pydantic-core = { channel = "https://prefix.dev/hingebase/gandharva" }
 gandharva = { path = "packages/gandharva-py310" }
 
 [feature.py311.dependencies]
+basedpyright = { workspace = true }
 gandharva = { path = "packages/gandharva-py311" }
 
 [feature.py313.dependencies]
+basedpyright = { workspace = true }
 gandharva = { path = "packages/gandharva" }
 python-gil = "3.13.*"
 
 [feature.py314]
+channels = ["conda-forge", "conda-pypi"]
 platforms = [
     "linux-64",
     "linux-aarch64",
@@ -103,27 +121,31 @@ platforms = [
 ]
 
 [feature.py314.dependencies]
+basedpyright = { workspace = true }
 gandharva = { path = "packages/gandharva" }
 python-gil = "3.14.*"
+
+[feature.py314.target.osx-64.dependencies]
+markitdown = { channel = "conda-pypi" }
 
 [feature.tests]
 channels = ["conda-forge", "https://prefix.dev/github-releases"]
 
 [feature.tests.target.linux.dependencies]
-ruff = ">=0.17.3"
-tombi = ">=1.9.8"
+ruff = { workspace = true }
+tombi = { workspace = true }
 
 [feature.tests.target.osx-64.dependencies]
-ruff = { version = ">=0.17.3", channel = "https://prefix.dev/github-releases" }
-tombi = { version = ">=1.9.7", channel = "https://prefix.dev/github-releases" }
+ruff = { version = ">=0.17.5", channel = "https://prefix.dev/github-releases" }
+tombi = { version = ">=1.11.2", channel = "https://prefix.dev/github-releases" }
 
 [feature.tests.target.osx-arm64.dependencies]
-ruff = ">=0.17.3"
-tombi = ">=1.9.8"
+ruff = { workspace = true }
+tombi = { workspace = true }
 
 [feature.tests.target.win-64.dependencies]
-ruff = ">=0.17.3"
-tombi = ">=1.9.8"
+ruff = { workspace = true }
+tombi = { workspace = true }
 
 [feature.tests.tasks]
 test = [

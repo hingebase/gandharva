@@ -19,6 +19,7 @@ import contextlib
 import inspect
 import logging
 import math
+import sys
 import weakref
 from collections.abc import Callable, Iterable, Mapping
 from typing import TYPE_CHECKING, cast
@@ -152,8 +153,13 @@ class App(_pydantic.App):
             main=[pn.bind(main, submit)],
             sidebar=sidebar,
         )
-        # main() can be invoked during page initialization
+        # <locals>.main() can be invoked during page initialization
         page = None
+
+        # https://github.com/holoviz/panel/pull/8946
+        if sys.version_info >= (3, 12):
+            return pmui.Page(**kwargs)
+
         page = pmui.Page(**kwargs)
         return page
 
