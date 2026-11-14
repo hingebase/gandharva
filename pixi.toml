@@ -68,8 +68,8 @@ uvicorn = ">=0.38.0"
 [environments]
 default = ["py311", "catalina", "pydantic-core", "tests"]
 py310 = ["py310", "catalina"]
-py313 = ["py313", "catalina", "pydantic-core"]
-py314 = ["py314"]
+py313 = ["py313", "catalina", "panel", "pydantic-core"]
+py314 = ["py314", "panel"]
 
 [feature.catalina]
 platforms = [
@@ -79,6 +79,13 @@ platforms = [
     "osx-arm64-macos-11-0",
     "win-64",
 ]
+
+[feature.panel]
+channels = ["pyviz", "pyviz/label/dev"]
+
+[feature.panel.dependencies]
+panel = { channel = "pyviz/label/dev" }
+panel-material-ui = { channel = "pyviz" }
 
 [feature.pydantic-core]
 channels = ["https://prefix.dev/hingebase/gandharva"]
