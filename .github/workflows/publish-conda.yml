@@ -4,6 +4,7 @@ on:
   push:
     tags:
       - v*
+  workflow_dispatch:
 
 permissions: read-all
 
@@ -26,7 +27,7 @@ jobs:
           pixi publish
           --generate-attestation
           --package-format 'conda:22'
-          --target-channel prefix://hingebase/gandharva
+          --target-channel prefix://prefix.dev/hingebase/gandharva
       - run: git restore packages/gandharva/pixi.toml
 
       - run: sed -i 's/publish = false/publish = true/' packages/gandharva-py310/pixi.toml
@@ -34,7 +35,7 @@ jobs:
           pixi publish
           --generate-attestation
           --package-format 'conda:22'
-          --target-channel prefix://hingebase/gandharva
+          --target-channel prefix://prefix.dev/hingebase/gandharva
       - run: git restore packages/gandharva-py310/pixi.toml
 
       - run: sed -i 's/publish = false/publish = true/' packages/gandharva-py311/pixi.toml
@@ -42,4 +43,4 @@ jobs:
           pixi publish
           --generate-attestation
           --package-format 'conda:22'
-          --target-channel prefix://hingebase/gandharva
+          --target-channel prefix://prefix.dev/hingebase/gandharva
