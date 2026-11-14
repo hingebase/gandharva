@@ -34,9 +34,9 @@ pycairo = { version = "<=1.26.1", when = "__unix" }
 pygobject = { version = "<=3.48.2", when = "__unix" }
 rich = ">=14.2.0"
 rich-argparse = ">=1.7.2,<2.0.0"
-ruff = ">=0.17.4"
+ruff = ">=0.17.5"
 sdl2 = { version = "<=2.30.10", when = "__osx 10.15.*" }
-tombi = ">=1.10.0"
+tombi = ">=1.11.2"
 typing-extensions = ">=4.15.0,<5.0.0"
 universal-pathlib = ">=0.3.10,<2.0.0"
 uv = ">=0.10.2,<0.14.0"
@@ -136,8 +136,8 @@ ruff = { workspace = true }
 tombi = { workspace = true }
 
 [feature.tests.target.osx-64.dependencies]
-ruff = { version = ">=0.17.4", channel = "https://prefix.dev/github-releases" }
-tombi = { version = ">=1.10.0", channel = "https://prefix.dev/github-releases" }
+ruff = { version = ">=0.17.5", channel = "https://prefix.dev/github-releases" }
+tombi = { version = ">=1.11.2", channel = "https://prefix.dev/github-releases" }
 
 [feature.tests.target.osx-arm64.dependencies]
 ruff = { workspace = true }
